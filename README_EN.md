@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2026.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.2.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.2.0-orange.svg)](https://github.com/Souitou-iop/MetalPilot/releases)
 
 > **About this repository**: This project is an enhanced and refactored fork based on the original open-source utility created by **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)**: [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox).
 
@@ -25,9 +25,11 @@ We extend our sincere gratitude and highest respect to the original author, **�
 ## 🖼️ Screenshots & Preview
 
 <p align="center">
-  <img src="docs/概览_en.png" alt="Overview Dashboard" width="32%" />
-  <img src="docs/HUD_en.png" alt="Metal HUD Tuner" width="32%" />
-  <img src="docs/菜单栏_en.png" alt="Menu Bar Controls" width="32%" />
+  <img src="docs/概览_en.png" alt="Overview Dashboard" width="49%" />
+  <img src="docs/HUD_en.png" alt="Metal HUD Tuner" width="49%" />
+</p>
+<p align="center">
+  <img src="docs/菜单栏_en.png" alt="Menu Bar Controls" width="42%" />
 </p>
 
 ---
@@ -119,7 +121,7 @@ To compile and package the release distribution locally:
 
 ```bash
 # 1. Clone this repository
-git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
+git clone https://github.com/Souitou-iop/MetalPilot.git
 cd mac-gaming-toolbox
 
 # 2. Run the release build and packaging script (Pure ARM64 Zip)

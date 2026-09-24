@@ -66,9 +66,11 @@ MetalPilot 将游戏启动、性能增强、Metal HUD、存档管理和系统状
 ## 🖥️ 界面预览
 
 <p align="center">
-  <img src="docs/概览_cn.png" alt="MetalPilot 概览与状态看板" width="32%" />
-  <img src="docs/HUD_cn.png" alt="MetalPilot Metal HUD 调优" width="32%" />
-  <img src="docs/菜单栏_cn.png" alt="MetalPilot 菜单栏控制面板" width="32%" />
+  <img src="docs/概览_cn.png" alt="MetalPilot 概览与状态看板" width="49%" />
+  <img src="docs/HUD_cn.png" alt="MetalPilot Metal HUD 调优" width="49%" />
+</p>
+<p align="center">
+  <img src="docs/菜单栏_cn.png" alt="MetalPilot 菜单栏控制面板" width="42%" />
 </p>
 
 ---
@@ -119,7 +121,7 @@ MetalPilot 将游戏启动、性能增强、Metal HUD、存档管理和系统状
 ### 获取源码
 
 ```bash
-git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
+git clone https://github.com/Souitou-iop/MetalPilot.git
 cd mac-gaming-toolbox
 ```
 

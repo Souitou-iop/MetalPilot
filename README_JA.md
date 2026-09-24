@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2026.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.2.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.2.0-orange.svg)](https://github.com/Souitou-iop/MetalPilot/releases)
 
 > **本リポジトリについて**：本プロジェクトは、原作者 **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)** 氏によるオープンソースプロジェクト [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) をベースに、UIの完全刷新・機能拡張・安定性向上を行ったフォーク版（Fork）です。
 
@@ -25,9 +25,11 @@
 ## 🖼️ スクリーンショット (Screenshots)
 
 <p align="center">
-  <img src="docs/概览_jp.png" alt="概要とステータス" width="32%" />
-  <img src="docs/HUD_jp.png" alt="Metal HUD 設定" width="32%" />
-  <img src="docs/菜单栏_jp.png" alt="メニューバーコントロール" width="32%" />
+  <img src="docs/概览_jp.png" alt="概要とステータス" width="49%" />
+  <img src="docs/HUD_jp.png" alt="Metal HUD 設定" width="49%" />
+</p>
+<p align="center">
+  <img src="docs/菜单栏_jp.png" alt="メニューバーコントロール" width="42%" />
 </p>
 
 ---
@@ -117,7 +119,7 @@
 
 ```bash
 # 1. リポジトリをクローン
-git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
+git clone https://github.com/Souitou-iop/MetalPilot.git
 cd mac-gaming-toolbox
 
 # 2. リリースビルドと Zip パッケージングの実行 (ARM64 のみ)
