@@ -93,11 +93,61 @@ public struct SystemProcess: Identifiable, Hashable, Sendable {
     public let pid: Int32
     public let parentPID: Int32
     public let command: String
+    public let cpuUsage: Double
+    public let applicationPath: String?
 
-    public init(pid: Int32, parentPID: Int32, command: String) {
+    public init(pid: Int32, parentPID: Int32, command: String, cpuUsage: Double = 0, applicationPath: String? = nil) {
         self.pid = pid
         self.parentPID = parentPID
         self.command = command
+        self.cpuUsage = cpuUsage
+        self.applicationPath = applicationPath
+    }
+
+    /// Best-known location for display and search: an explicit application
+    /// path, then an `.app` bundle embedded in the command, then the
+    /// executable's directory.
+    public var locationPath: String? {
+        applicationPath ?? Self.appBundlePath(in: command) ?? executableDirectory
+    }
+
+    /// Matches a free-text query against the command, the resolved location,
+    /// or the PID so the process picker can search by name, directory or PID.
+    public func matches(searchText: String) -> Bool {
+        command.localizedCaseInsensitiveContains(searchText)
+            || locationPath?.localizedCaseInsensitiveContains(searchText) == true
+            || String(pid).contains(searchText)
+    }
+
+    public func matchesFavoriteName(_ name: String) -> Bool {
+        displayName == name
+    }
+
+    /// Executable name, preferring the binary inside an `.app` bundle so
+    /// `/Applications/Foo.app/Contents/MacOS/Foo -flag` reports `Foo`.
+    public var displayName: String {
+        if let contentsRange = command.range(of: "/Contents/MacOS/") {
+            let executable = command[contentsRange.upperBound...].split(whereSeparator: \.isWhitespace).first
+            if let executable, !executable.isEmpty { return String(executable) }
+        }
+        let executable = command.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? command
+        return URL(fileURLWithPath: executable).lastPathComponent
+    }
+
+    private var executableDirectory: String? {
+        guard let executable = command.split(whereSeparator: \.isWhitespace).first,
+              executable.hasPrefix("/") else { return nil }
+        return URL(fileURLWithPath: String(executable)).deletingLastPathComponent().path
+    }
+
+    /// Extracts the first path segment that sits inside an `.app` bundle and
+    /// stops before the next slash, so trailing arguments are not captured.
+    private static func appBundlePath(in command: String) -> String? {
+        let expression = try? NSRegularExpression(pattern: #"(?:^|\s)(/.*?\.app)(?=/|$)"#)
+        let range = NSRange(command.startIndex..., in: command)
+        guard let match = expression?.firstMatch(in: command, range: range),
+              let bundleRange = Range(match.range(at: 1), in: command) else { return nil }
+        return String(command[bundleRange])
     }
 }
 
@@ -166,11 +216,46 @@ public struct MetalHUDProcess: Identifiable, Hashable, Sendable, Codable {
 public struct RecentMetalHUDApp: Codable, Hashable, Identifiable, Sendable {
     public var path: String
     public var displayName: String
+    /// Optional externally imported Metal HUD preset (plist) associated with this app.
+    /// Schema 3 configurations written before this feature have no key here, so the
+    /// property is optional and decoded with `decodeIfPresent`.
+    public var importedPreset: ImportedHUDPreset?
     public var id: String { path }
 
-    public init(path: String, displayName: String) {
+    public init(path: String, displayName: String, importedPreset: ImportedHUDPreset? = nil) {
         self.path = path
         self.displayName = displayName
+        self.importedPreset = importedPreset
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case path, displayName, importedPreset
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        path = try container.decode(String.self, forKey: .path)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        importedPreset = try container.decodeIfPresent(ImportedHUDPreset.self, forKey: .importedPreset)
+    }
+}
+
+/// A Metal HUD preset (property list) the user imported from an external file.
+///
+/// Named `ImportedHUDPreset` on purpose: the app target already owns an unrelated
+/// `MetalHUDPreset` enum used for the built-in UI presets (minimal/balanced/complex),
+/// so this type must never reuse that name.
+public struct ImportedHUDPreset: Codable, Hashable, Sendable {
+    /// Absolute path to the managed copy inside Application Support (not the user's original export).
+    public var path: String
+    /// User-facing name, derived from the imported file name.
+    public var displayName: String
+    public var importedAt: Date?
+
+    public init(path: String, displayName: String, importedAt: Date? = nil) {
+        self.path = path
+        self.displayName = displayName
+        self.importedAt = importedAt
     }
 }
 
@@ -512,6 +597,52 @@ public struct WineBottle: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
+/// A connected iPhone/iPad as reported by Xcode's CoreDevice stack
+/// (`xcrun devicectl list devices`).
+///
+/// Only devices whose hardware platform is iOS/iPadOS are ever built from the
+/// inventory; other CoreDevice-managed hardware (Macs, Apple TVs, watches) is
+/// filtered out before this type is constructed.
+public struct IOSDevice: Identifiable, Hashable, Sendable {
+    public let id: String
+    public let name: String
+    public let model: String
+    public let osVersion: String
+    public let state: String
+
+    public init(id: String, name: String, model: String = "", osVersion: String = "", state: String = "") {
+        self.id = id
+        self.name = name
+        self.model = model
+        self.osVersion = osVersion
+        self.state = state
+    }
+
+    public var displayName: String { name.isEmpty ? id : name }
+
+    /// Secondary line for lists: model, OS version and connection state,
+    /// skipping whatever the device did not report.
+    public var detailText: String {
+        [model, osVersion, state].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+}
+
+/// One app installed on a connected iOS device, as reported by
+/// `xcrun devicectl device info apps`.
+public struct IOSInstalledApp: Identifiable, Hashable, Sendable {
+    public let bundleIdentifier: String
+    public let displayName: String
+    public let version: String
+
+    public init(bundleIdentifier: String, displayName: String, version: String = "") {
+        self.bundleIdentifier = bundleIdentifier
+        self.displayName = displayName
+        self.version = version
+    }
+
+    public var id: String { bundleIdentifier }
+}
+
 public struct GameSaveLocation: Identifiable, Codable, Equatable, Sendable {
     public var id: String { path }
     public let bottleName: String
@@ -614,6 +745,12 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
     public var savedGameBackupsDirectory: String?
     public var languagePreference: AppLanguagePreference = .system
     public var scalingSettings: ScalingSettings = ScalingSettings()
+    /// Process names (executable display names) the user pinned for one-tap
+    /// priority optimisation. Empty by default so schema 3 stays readable.
+    public var favoriteProcessNames: [String] = []
+    /// When true the HoYo launch assistant still rewrites and restores hosts but
+    /// leaves Wine process priority untouched.
+    public var doesNotRaiseHoYoPriority = false
 
     public init() {}
 
@@ -622,6 +759,7 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         case automaticallyRestoreMountsOnLaunch, restorableDiskMounts, hostnameBackup
         case recentMetalHUDApps, hoYoWaitSeconds, excludesSensitiveCacheFiles, metalHUDOptions, navigationLayoutMode
         case perAppHUDProfiles, savedGameBackupsDirectory, languagePreference, scalingSettings
+        case favoriteProcessNames, doesNotRaiseHoYoPriority
     }
 
     public init(from decoder: Decoder) throws {
@@ -643,6 +781,8 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         savedGameBackupsDirectory = try container.decodeIfPresent(String.self, forKey: .savedGameBackupsDirectory)
         languagePreference = try container.decodeIfPresent(AppLanguagePreference.self, forKey: .languagePreference) ?? .system
         scalingSettings = try container.decodeIfPresent(ScalingSettings.self, forKey: .scalingSettings) ?? ScalingSettings()
+        favoriteProcessNames = try container.decodeIfPresent([String].self, forKey: .favoriteProcessNames) ?? []
+        doesNotRaiseHoYoPriority = try container.decodeIfPresent(Bool.self, forKey: .doesNotRaiseHoYoPriority) ?? false
     }
 }
 

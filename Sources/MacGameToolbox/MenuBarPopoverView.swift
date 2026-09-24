@@ -87,7 +87,9 @@ public struct MenuBarPopoverView: View {
                 }
                 .padding(12)
             }
-            .frame(height: 330)
+            // Let the scroll region absorb the remaining popover height instead of
+            // leaving AppKit-owned padding above/below the hosting view.
+            .frame(maxHeight: .infinity)
 
             Divider()
                 .opacity(0.3)
@@ -98,9 +100,12 @@ public struct MenuBarPopoverView: View {
                 .padding(.vertical, 10)
                 .background(Color(nsColor: .windowBackgroundColor).opacity(0.6))
         }
-        .frame(width: 380)
+        // Keep the SwiftUI hosting view exactly the same size as the NSPopover.
+        // Without an explicit height, AppKit centers the smaller intrinsic view and
+        // exposes its own material at the top and bottom edges.
+        .frame(width: 380, height: 500, alignment: .top)
         .background(
-            VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
+            VisualEffectBlur(material: .popover, blendingMode: .withinWindow)
         )
     }
 
@@ -108,17 +113,15 @@ public struct MenuBarPopoverView: View {
 
     private var topHeaderView: some View {
         HStack(spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.2))
-                    .frame(width: 28, height: 28)
-                Image(systemName: "gamecontroller.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color.accentColor)
-            }
+            Image("MetalPilotLogo")
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"))
+                Text(tr("MetalPilot", "MetalPilot", "MetalPilot"))
                     .font(.system(size: 13, weight: .bold))
                 Text("\(AppVersion.displayString) • Apple Silicon")
                     .font(.system(size: 9, weight: .medium).monospaced())
@@ -574,7 +577,13 @@ public struct MenuBarPopoverView: View {
 
             Spacer()
 
-            if hasCustomProfile {
+            if app.importedPreset != nil {
+                // Imported preset takes priority over the custom/global profile.
+                Text("◆")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.orange)
+                    .help(tr("使用导入的外部 HUD 预设", "Using imported external HUD preset", "外部 HUD プリセットを使用中"))
+            } else if hasCustomProfile {
                 Text("★")
                     .font(.system(size: 8))
                     .foregroundStyle(.green)
@@ -626,7 +635,7 @@ public struct MenuBarPopoverView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 11))
-                    Text(tr("打开主界面", "Open Toolbox", "メイン画面を開く"))
+                    Text(tr("打开主界面", "Open MetalPilot", "メイン画面を開く"))
                         .font(.system(size: 11, weight: .medium))
                 }
                 .frame(maxWidth: .infinity)

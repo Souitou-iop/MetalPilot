@@ -119,6 +119,14 @@ public struct CommandCenterView: View {
                     .controlSize(.regular)
 
                     Button {
+                        model.openIOSHUDLauncher()
+                    } label: {
+                        Label(tr("iOS 设备启动", "Launch on iOS"), systemImage: "iphone.gen3")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+
+                    Button {
                         withAnimation(.easeInOut(duration: 0.25)) {
                             expandedTuner.toggle()
                         }

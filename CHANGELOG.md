@@ -1,6 +1,20 @@
 # Changelog
 
-All notable changes to **Mac 游戏工具箱 (Mac Gaming Toolbox)** will be documented in this file.
+All notable changes to **MetalPilot** will be documented in this file.
+
+---
+
+## [v4.2.0] - 2026-09-24
+
+### 🖼️ 三语界面演示与菜单栏 Popover 修复 (Trilingual UI Showcase & Popover Layout Fix)
+- **更新中/英/日三语 README 截图**：加入概览、Metal HUD 和菜单栏三组最新演示图，统一展示 MetalPilot 当前界面。
+- **修复菜单栏 Popover 上下边缘材质露出**：统一 SwiftUI Hosting View 与 NSPopover 尺寸，并使用窗口内材质混合模式，避免上下出现前景模糊缺失。
+
+### 🎨 品牌重塑为 MetalPilot (Rebranding to MetalPilot)
+- **对外品牌统一更名为 MetalPilot**：App 显示名、Xcode target/scheme/工程名、构建与打包脚本、README（中/英/日）、CHANGELOG、AUDIT_REPORT 及发布产物文件名统一改为 MetalPilot。
+- **接入全新 App 图标**：使用新的 MetalPilot 图标（火箭 + 蓝色轨道）替换原有工具箱图标，覆盖 macOS 所需全部尺寸（16–1024pt）。
+- **保留旧技术标识以保障升级兼容**：App Bundle ID（`com.iven.macgametoolbox`）、特权 Helper Bundle ID（`macgametoolbox.helper`）、LaunchDaemon Label、MachService 名称、Helper 二进制名与内置 plist 文件名均**保持不变**。修改这些标识会导致旧版本升级后权限服务失联、用户数据目录失效或产生残留守护进程，故本次品牌重构仅改用户可见名称，技术标识待独立迁移方案再处理。
+- **模块名保持稳定**：Swift Target/模块名（`MacGameToolbox`、`MacGameToolboxCore`、`MacGameToolboxPrivilegedHelper`）与源码目录未改动，避免无关重构。
 
 ---
 

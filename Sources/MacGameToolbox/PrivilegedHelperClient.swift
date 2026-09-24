@@ -6,10 +6,10 @@ import OSLog
 import Security
 
 public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Sendable {
-    static let serviceName = "macgametoolbox.helper"
-    static let appBundleIdentifier = "com.iven.macgametoolbox"
-    static let installedHelperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
-    static let installedPlistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
+    static let serviceName = PrivilegedHelperConstants.serviceName
+    static let appBundleIdentifier = PrivilegedHelperConstants.appBundleIdentifier
+    static let installedHelperPath = PrivilegedHelperConstants.installedHelperPath
+    static let installedPlistPath = PrivilegedHelperConstants.installedPlistPath
     private let coordinator = PrivilegedHelperCoordinator()
 
     public init() {}
@@ -69,10 +69,10 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
         guard FileManager.default.fileExists(atPath: installedHelperPath),
               FileManager.default.contentsEqual(atPath: installedHelperPath, andPath: bundledHelperPath),
               let data = try? Data(contentsOf: URL(fileURLWithPath: installedPlistPath)),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-              plist["Label"] as? String == serviceName,
-              let identifiers = plist["AssociatedBundleIdentifiers"] as? [String] else { return false }
-        return identifiers.contains(appBundleIdentifier)
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
+            return false
+        }
+        return PrivilegedHelperConstants.isPlistCurrent(plist)
     }
 }
 

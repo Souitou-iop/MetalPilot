@@ -1,11 +1,11 @@
-# Mac Gaming Toolbox - Enhanced Fork Edition
+# MetalPilot - An Independent Gaming Toolbox for Apple Silicon
 
 [简体中文](README.md) | [English](README_EN.md) | [日本語](README_JA.md)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2026.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.2.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **About this repository**: This project is an enhanced and refactored fork based on the original open-source utility created by **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)**: [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox).
 
@@ -25,8 +25,9 @@ We extend our sincere gratitude and highest respect to the original author, **�
 ## 🖼️ Screenshots & Preview
 
 <p align="center">
-  <img src="docs/screenshots/en/overview.png" alt="Overview Dashboard" width="49%" />
-  <img src="docs/screenshots/en/metal_hud.png" alt="Metal HUD Tuner" width="49%" />
+  <img src="docs/概览_en.png" alt="Overview Dashboard" width="32%" />
+  <img src="docs/HUD_en.png" alt="Metal HUD Tuner" width="32%" />
+  <img src="docs/菜单栏_en.png" alt="Menu Bar Controls" width="32%" />
 </p>
 
 ---
@@ -74,7 +75,7 @@ While preserving all core capabilities of the upstream utility, this fork introd
 ### 8. 🛡️ Passive Zero-Prompt Health Check & Legacy Cleanup
 - **Zero Startup Prompts**: Performs a 100% passive, read-only system inspection on launch **without annoying password prompts**; authorization is requested only on-demand when using privileged features or manual repair.
 - **Legacy Residuals Cleaner**: Detects and cleans up leftover helper daemons and files from older versions.
-- **System Icon Association**: The privileged helper is streamlined to `macgametoolbox.helper`, displaying the native app icon in macOS System Settings > Login Items & Extensions.
+- **System Icon Association**: The privileged helper keeps the legacy identifier `macgametoolbox.helper` (retained for upgrade compatibility with older releases), displaying the native app icon in macOS System Settings > Login Items & Extensions.
 
 ### 9. 🌐 Full Dynamic Tri-Lingual Localization (ZH / EN / JA)
 - Comprehensive localization across **Simplified Chinese**, **English**, and **Japanese**.
@@ -88,7 +89,7 @@ While preserving all core capabilities of the upstream utility, this fork introd
 
 ## 📋 Feature Comparison Table
 
-| Feature / Capability | Upstream (Original) | Enhanced Fork (v4.1.0) |
+| Feature / Capability | Upstream (Original) | Enhanced Fork (v4.2.0) |
 | :--- | :---: | :---: |
 | **Scaling & Frame Gen** | None | **0ms Hardware FG (2x-4x), MetalFX Upscaling, CAS, TAA/SMAA/FXAA** |
 | **UI Architecture** | Legacy Floating Windows / Sheets | Modern Native Sidebar (`NavigationSplitView`) |
@@ -106,7 +107,7 @@ While preserving all core capabilities of the upstream utility, this fork introd
 
 ## 💻 System Requirements
 
-- **Operating System**: macOS 14.0 (Sonoma) or later
+- **Operating System**: macOS 26 (Tahoe) or later
 - **Architecture**: Apple Silicon (M1 / M2 / M3 / M4 chips)
 - **Build Requirements**: Xcode 16+, Swift 6, and Command Line Tools
 
@@ -122,10 +123,10 @@ git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
 cd mac-gaming-toolbox
 
 # 2. Run the release build and packaging script (Pure ARM64 Zip)
-ARCHS=arm64 ./Scripts/build-release.sh && ./Scripts/package-zip.sh "build/DerivedData/Build/Products/Release/Mac 游戏工具箱.app" "build/Mac 游戏工具箱-arm64.zip"
+ARCHS=arm64 ./Scripts/build-release.sh && ./Scripts/package-zip.sh "build/DerivedData/Build/Products/Release/MetalPilot.app" "build/MetalPilot-arm64.zip"
 ```
 
-The single archive will be generated at `build/Mac 游戏工具箱-arm64.zip`.
+The single archive will be generated at `build/MetalPilot-arm64.zip`.
 
 ---
 

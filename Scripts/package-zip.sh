@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -ne 2 ]]; then
-  echo "Usage: $0 '/path/to/Mac 游戏工具箱.app' output.zip" >&2
+  echo "Usage: $0 '/path/to/MetalPilot.app' output.zip" >&2
   exit 2
 fi
 

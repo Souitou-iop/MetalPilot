@@ -38,24 +38,17 @@ public struct AboutSectionView: View {
     private var appHeroBox: some View {
         GroupBox {
             HStack(spacing: 20) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(LinearGradient(
-                            colors: [Color.cyan.opacity(0.8), Color.blue],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .frame(width: 68, height: 68)
-                        .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
-
-                    Image(systemName: "gamecontroller.fill")
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(.white)
-                }
+                Image("MetalPilotLogo")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: 84, height: 84)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: Color.blue.opacity(0.28), radius: 8, x: 0, y: 4)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Mac ゲーミングツールボックス"))
+                        Text(tr("MetalPilot", "MetalPilot", "MetalPilot"))
                             .font(.title2.bold())
                         Text(AppVersion.displayString)
                             .font(.subheadline.monospaced())
@@ -65,7 +58,7 @@ public struct AboutSectionView: View {
                             .foregroundStyle(.blue)
                     }
 
-                    Text(tr("专为 macOS 打造的原生游戏环境与性能调优辅助工具箱", "Native macOS utility for gaming environment optimization and Metal performance overlays.", "macOSネイティブのゲーム環境最適化・Metalパフォーマンス測定ツール。"))
+                    Text(tr("面向 Apple Silicon 的原生游戏控制中心，专注游戏环境调优与 Metal 性能覆盖", "A native game control center for Apple Silicon, focused on gaming environment tuning and Metal performance overlays.", "Apple Silicon 向けのネイティブゲームコントロールセンター。ゲーム環境の最適化と Metal パフォーマンスオーバーレイに特化。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 

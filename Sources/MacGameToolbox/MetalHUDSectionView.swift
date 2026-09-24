@@ -103,6 +103,16 @@ public struct MetalHUDSectionView: View {
                     }
                     .buttonStyle(.bordered)
 
+                    Button {
+                        model.openIOSHUDLauncher()
+                    } label: {
+                        Label(tr("iOS 设备 HUD 启动", "Launch on iOS Device", "iOS デバイスで起動"), systemImage: "iphone.gen3")
+                    }
+                    .buttonStyle(.bordered)
+                    .help(tr("通过 Xcode 的 devicectl 在已连接的 iPhone/iPad 上启动 App 并注入 MetalHUD",
+                             "Launch an app on a connected iPhone/iPad with MetalHUD via Xcode's devicectl",
+                             "Xcode の devicectl で接続済み iPhone/iPad のアプリを MetalHUD 付きで起動"))
+
                     Spacer()
 
                     Button(tr("重置默认配置", "Reset Settings", "デフォルト設定に戻す"), role: .destructive) {

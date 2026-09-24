@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "MacGameToolbox",
     defaultLocalization: "zh-Hans",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS("26.0")],
     products: [
         .library(name: "MacGameToolboxCore", targets: ["MacGameToolboxCore"]),
         .executable(name: "MacGameToolbox", targets: ["MacGameToolbox"]),

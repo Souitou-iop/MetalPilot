@@ -17,7 +17,7 @@ public struct ScalingHUDView: View {
             HStack {
                 Image(systemName: "sparkles.tv")
                     .foregroundStyle(Color.accentColor)
-                Text("Mac Gaming Toolbox • Frame Gen")
+                Text("MetalPilot • Frame Gen")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                 Spacer()
             }

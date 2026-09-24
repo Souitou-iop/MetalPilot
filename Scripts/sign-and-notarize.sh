@@ -5,7 +5,7 @@ set -euo pipefail
 : "${NOTARY_KEYCHAIN_PROFILE:?Set NOTARY_KEYCHAIN_PROFILE}"
 
 if [[ $# -ne 2 ]]; then
-  echo "Usage: $0 '/path/to/Mac 游戏工具箱.app' output.dmg" >&2
+  echo "Usage: $0 '/path/to/MetalPilot.app' output.dmg" >&2
   exit 2
 fi
 

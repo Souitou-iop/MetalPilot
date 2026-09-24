@@ -1,11 +1,11 @@
-# Mac ゲーミングツールボックス (Mac Gaming Toolbox) - 拡張フォーク版
+# MetalPilot - Apple Silicon 向けの独立系ゲーミングツールボックス
 
 [简体中文](README.md) | [English](README_EN.md) | [日本語](README_JA.md)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2026.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.2.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **本リポジトリについて**：本プロジェクトは、原作者 **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)** 氏によるオープンソースプロジェクト [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) をベースに、UIの完全刷新・機能拡張・安定性向上を行ったフォーク版（Fork）です。
 
@@ -25,8 +25,9 @@
 ## 🖼️ スクリーンショット (Screenshots)
 
 <p align="center">
-  <img src="docs/screenshots/ja/overview.png" alt="概要とステータス" width="49%" />
-  <img src="docs/screenshots/ja/metal_hud.png" alt="Metal HUD 設定" width="49%" />
+  <img src="docs/概览_jp.png" alt="概要とステータス" width="32%" />
+  <img src="docs/HUD_jp.png" alt="Metal HUD 設定" width="32%" />
+  <img src="docs/菜单栏_jp.png" alt="メニューバーコントロール" width="32%" />
 </p>
 
 ---
@@ -74,7 +75,7 @@
 ### 8. 🛡️ パスワード不要の安全な起動診断と残存ファイルクリーンアップ
 - **起動時パスワード要求ゼロ**：起動時は完全読み取り専用の被動診断のみを行い、**管理者のパスワード入力を要求しません**。
 - **過去バージョンの残存ファイル削除**：過去の旧バージョンで残された Helper ファイルを検出・一括クリーンアップ。
-- **アプリアイコン正常表示**：特権サービスを `macgametoolbox.helper` に整理し、システム設定「ログイン項目」でアイコンを正常表示。
+- **アプリアイコン正常表示**：特権サービスは旧バージョンからのアップグレード互換のため識別子 `macgametoolbox.helper` を維持し、システム設定「ログイン項目」でアイコンを正常表示。
 
 ### 9. 🌐 3言語リアルタイム切替 (日本語 / 英語 / 簡体中文)
 - **日本語 (ja)**、**English (en)**、**简体中文 (zh-Hans)** を完全サポート。
@@ -88,7 +89,7 @@
 
 ## 📋 機能比較表 (Comparison)
 
-| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v4.1.0) |
+| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v4.2.0) |
 | :--- | :---: | :---: |
 | **超解像・動的補フレーム** | なし | **ゼロ遅延ハードウェア外挿 (2x-4x)、MetalFX超解像、CAS、TAA/SMAA/FXAA** |
 | **UI アーキテクチャ** | 従来のフローティングウィンドウ / モーダル | 現代的なネイティブサイドバー (`NavigationSplitView`) |
@@ -106,7 +107,7 @@
 
 ## 💻 動作環境
 
-- **OS**：macOS 14.0 (Sonoma) 以降
+- **OS**：macOS 26 (Tahoe) 以降
 - **アーキテクチャ**：Apple Silicon (M1 / M2 / M3 / M4 シリーズ)
 - **ビルド環境**：Xcode 16+, Swift 6, Command Line Tools
 
@@ -120,10 +121,10 @@ git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
 cd mac-gaming-toolbox
 
 # 2. リリースビルドと Zip パッケージングの実行 (ARM64 のみ)
-ARCHS=arm64 ./Scripts/build-release.sh && ./Scripts/package-zip.sh "build/DerivedData/Build/Products/Release/Mac 游戏工具箱.app" "build/Mac 游戏工具箱-arm64.zip"
+ARCHS=arm64 ./Scripts/build-release.sh && ./Scripts/package-zip.sh "build/DerivedData/Build/Products/Release/MetalPilot.app" "build/MetalPilot-arm64.zip"
 ```
 
-ビルド完了後、単一のインストール用 Zip ファイルが `build/Mac 游戏工具箱-arm64.zip` に生成されます。
+ビルド完了後、単一のインストール用 Zip ファイルが `build/MetalPilot-arm64.zip` に生成されます。
 
 ---
 

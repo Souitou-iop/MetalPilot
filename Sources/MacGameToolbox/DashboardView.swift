@@ -27,9 +27,15 @@ struct DashboardView: View {
         .sheet(isPresented: $model.showingProcessSelection) { ProcessSelectionView().environmentObject(model) }
         .sheet(isPresented: $model.showingMetalHUDProcessManager) { MetalHUDProcessManagerView().environmentObject(model) }
         .sheet(isPresented: $showingMetalHUDTuner) { MetalHUDTunerView().environmentObject(model) }
+        .sheet(isPresented: $model.showingIOSHUDLauncher) { IOSHUDLauncherSheetView().environmentObject(model) }
         .alert(cacheAlertTitle, isPresented: $model.showingCacheConfirmation) {
             Button(tr("取消", "Cancel"), role: .cancel) {}
-            Button(model.cacheConfirmationStage == 1 ? tr("继续", "Continue") : tr("确认删除", "Delete"), role: model.configuration.excludesSensitiveCacheFiles ? nil : .destructive) { model.confirmCacheCleaning() }
+            if model.isCacheCleanupBlockedByIncompleteScan {
+                Button(tr("打开系统设置", "Open System Settings")) { model.openFullDiskAccessSettings() }
+                Button(tr("重新扫描", "Scan Again")) { model.prepareCacheScan() }
+            } else {
+                Button(model.cacheConfirmationStage == 1 ? tr("继续", "Continue") : tr("确认删除", "Delete"), role: model.configuration.excludesSensitiveCacheFiles ? nil : .destructive) { model.confirmCacheCleaning() }
+            }
         } message: { Text(cacheAlertMessage) }
         .environment(\.colorScheme, colorScheme)
         .environment(\.dashboardColorScheme, colorScheme)
@@ -205,7 +211,7 @@ struct DashboardView: View {
                 .allowsHitTesting(isStatusPanelVisible)
                 .accessibilityHidden(!isStatusPanelVisible)
         }
-        .navigationTitle(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"))
+        .navigationTitle(tr("MetalPilot", "MetalPilot", "MetalPilot"))
     }
 
     private var sidebarFooter: some View {
@@ -213,7 +219,7 @@ struct DashboardView: View {
             Circle()
                 .fill(model.metalHUDEnabled ? Color.green : Color.secondary)
                 .frame(width: 7, height: 7)
-            Text(model.metalHUDEnabled ? tr("Metal HUD 已开启", "Metal HUD Active", "Metal HUD 有効") : tr("工具箱就绪", "Toolbox Ready", "ツールボックス準備完了"))
+            Text(model.metalHUDEnabled ? tr("Metal HUD 已开启", "Metal HUD Active", "Metal HUD 有効") : tr("MetalPilot 就绪", "MetalPilot Ready", "MetalPilot 準備完了"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -257,12 +263,29 @@ struct DashboardView: View {
     }
 
     private var cacheAlertTitle: String {
+        if model.isCacheCleanupBlockedByIncompleteScan { return tr("需要完全磁盘访问权限", "Full Disk Access Required") }
         if model.configuration.excludesSensitiveCacheFiles { return tr("准备清理", "Ready to Clean") }
         return model.cacheConfirmationStage == 1 ? tr("高风险操作", "High Risk") : tr("最终确认", "Final Confirmation")
     }
     private var cacheAlertMessage: String {
         guard let scan = model.cacheScan else { return "" }
         let size = ByteCountFormatter.string(fromByteCount: Int64(scan.estimatedBytes), countStyle: .file)
+        if !scan.inaccessibleTargets.isEmpty {
+            let paths = scan.inaccessibleTargets.prefix(3)
+                .map { "\($0.path.path)：\($0.reason)" }
+                .joined(separator: "\n")
+            let suffix = scan.inaccessibleTargets.count > 3 ? tr("\n……以及其他项目", "\n…and other items") : ""
+            if model.configuration.excludesSensitiveCacheFiles {
+                return tr(
+                    "扫描不完整：\(scan.inaccessibleTargets.count) 个缓存目录无法读取，已统计大小 \(size)。仍可继续安全清理（仅用户目录，共 \(scan.userTargets.count) 个）。如需完整清理，请授予完全磁盘访问权限后重新扫描：\n\(paths)\(suffix)",
+                    "Scan incomplete: \(scan.inaccessibleTargets.count) cache item(s) could not be read; readable size is \(size). You can still continue the safe cleanup (\(scan.userTargets.count) user folder(s) only). For a full cleanup, grant Full Disk Access and scan again:\n\(paths)\(suffix)"
+                )
+            }
+            return tr(
+                "发现 \(scan.inaccessibleTargets.count) 个无法读取的缓存目录，已统计大小 \(size)。完全清理需要读取系统目录，请在系统设置中授予完全磁盘访问权限后重新扫描：\n\(paths)\(suffix)",
+                "Found \(scan.inaccessibleTargets.count) unreadable cache item(s); readable size is \(size). The full cleanup also reads system directories, so grant Full Disk Access in System Settings, then scan again:\n\(paths)\(suffix)"
+            )
+        }
         if model.configuration.excludesSensitiveCacheFiles {
             return tr("预计清理 \(size)，点击继续进行清理", "About \(size) will be cleaned. Click Continue to proceed.")
         }
@@ -974,12 +997,11 @@ private struct ProcessSelectionView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
+    @State private var showingFavoriteProcessEditor = false
 
     private var filteredProcesses: [SystemProcess] {
         guard !searchText.isEmpty else { return model.runningProcesses }
-        return model.runningProcesses.filter {
-            $0.command.localizedCaseInsensitiveContains(searchText) || String($0.pid).contains(searchText)
-        }
+        return model.runningProcesses.filter { $0.matches(searchText: searchText) }
     }
 
     var body: some View {
@@ -993,7 +1015,7 @@ private struct ProcessSelectionView: View {
                 Spacer()
                 Button(tr("取消", "Cancel")) { dismiss() }
             }
-            TextField(tr("搜索进程名称或 PID", "Search process name or PID"), text: $searchText)
+            TextField(tr("搜索进程名称、目录或 PID", "Search process name, location, or PID"), text: $searchText)
                 .textFieldStyle(.roundedBorder)
             if model.runningProcesses.isEmpty {
                 ProgressView(tr("正在读取进程", "Loading processes"))
@@ -1007,20 +1029,40 @@ private struct ProcessSelectionView: View {
                             else { model.selectedProcessIDs.remove(process.pid) }
                         }
                     )) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(process.command.split(separator: "/").last.map(String.init) ?? process.command)
-                                .font(.headline)
-                            Text("PID \(process.pid) · \(process.command)")
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(process.displayName)
+                                    .font(.headline)
+                                Text("CPU \(process.cpuUsage.formatted(.number.precision(.fractionLength(1))))% · PID \(process.pid) · \(tr("目录", "Location")) · \(process.locationPath ?? process.command)")
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+                            Spacer(minLength: 0)
+                            Button {
+                                model.toggleFavoriteProcess(process)
+                            } label: {
+                                Image(systemName: model.isFavoriteProcess(process) ? "star.fill" : "star")
+                                    .foregroundStyle(model.isFavoriteProcess(process) ? .yellow : .secondary)
+                            }
+                            .buttonStyle(.borderless)
+                            .help(model.isFavoriteProcess(process) ? tr("取消收藏", "Remove favorite") : tr("收藏进程", "Favorite process"))
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .toggleStyle(.checkbox)
                 }
             }
-            HStack {
+            HStack(spacing: 8) {
+                Button(tr("常用进程优化", "Optimize Favorite Processes")) { model.increaseFavoriteProcessPriority() }
+                    .disabled(model.configuration.favoriteProcessNames.isEmpty)
+                Menu {
+                    Button(tr("编辑常用进程", "Edit Favorite Processes")) { showingFavoriteProcessEditor = true }
+                } label: {
+                    Image(systemName: "ellipsis")
+                }
+                .menuStyle(.borderlessButton)
                 Text(tr("已选择 \(model.selectedProcessIDs.count)/64 个进程", "\(model.selectedProcessIDs.count)/64 process(es) selected"))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -1031,6 +1073,63 @@ private struct ProcessSelectionView: View {
         }
         .padding(22)
         .frame(minWidth: 680, minHeight: 520)
+        .sheet(isPresented: $showingFavoriteProcessEditor) {
+            FavoriteProcessEditorView().environmentObject(model)
+        }
+    }
+}
+
+private struct FavoriteProcessEditorView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var processName = ""
+
+    private var normalizedName: String {
+        processName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tr("编辑常用进程", "Edit Favorite Processes"))
+                        .font(.title2.bold())
+                    Text(tr("常用进程优化只会按完整且区分大小写的进程名进行搜索", "Favorite optimization only searches complete, case-sensitive process names"))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(tr("完成", "Done")) { dismiss() }
+            }
+
+            HStack {
+                TextField(tr("输入精确进程名", "Enter exact process name"), text: $processName)
+                    .textFieldStyle(.roundedBorder)
+                Button(tr("添加常用进程", "Add Favorite Process")) {
+                    model.addFavoriteProcess(processName)
+                    processName = ""
+                }
+                .disabled(normalizedName.isEmpty || model.configuration.favoriteProcessNames.contains(normalizedName) || model.configuration.favoriteProcessNames.count >= ConfigurationStore.maxFavoriteProcessNames)
+            }
+
+            if model.configuration.favoriteProcessNames.isEmpty {
+                Text(tr("尚未收藏常用进程", "No favorite processes saved"))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(model.configuration.favoriteProcessNames, id: \.self) { name in
+                    HStack {
+                        Text(name)
+                        Spacer()
+                        Button(tr("删除", "Delete"), role: .destructive) {
+                            model.removeFavoriteProcess(name)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+            }
+        }
+        .padding(22)
+        .frame(width: 560, height: 420)
     }
 }
 

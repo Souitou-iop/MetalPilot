@@ -26,7 +26,7 @@ public struct TargetWindowInfo: Identifiable, Sendable {
 }
 
 public final class WindowCaptureService: NSObject, SCStreamDelegate, SCStreamOutput, @unchecked Sendable {
-    private let captureQueue = DispatchQueue(label: "com.macgametoolbox.scaling.capture", qos: .userInteractive)
+    private let captureQueue = DispatchQueue(label: "com.metalpilot.scaling.capture", qos: .userInteractive)
 
     public private(set) var lastError: String?
     private var stream: SCStream?

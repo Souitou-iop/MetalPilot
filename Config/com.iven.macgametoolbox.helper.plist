@@ -11,6 +11,5 @@
     <array><string>com.iven.macgametoolbox</string></array>
     <key>MachServices</key>
     <dict><key>macgametoolbox.helper</key><true/></dict>
-    <key>RunAtLoad</key><true/>
 </dict>
 </plist>

@@ -188,6 +188,17 @@ public struct HUDAppLauncherSheetView: View {
                 HStack(spacing: 6) {
                     Text(app.displayName)
                         .font(.system(size: 13, weight: .semibold))
+                    if app.importedPreset != nil {
+                        // Priority: an imported preset overrides both the per-app custom
+                        // profile and the global default for this app's launches.
+                        Text(tr("外部预设（优先）", "Imported Preset (takes priority)", "外部プリセット（優先）"))
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Color.orange.opacity(0.18))
+                            .foregroundStyle(.orange)
+                            .cornerRadius(3)
+                    }
                     if hasCustomProfile {
                         Text(tr("专属方案", "Custom Profile", "個別設定"))
                             .font(.system(size: 9, weight: .bold))
@@ -214,6 +225,35 @@ public struct HUDAppLauncherSheetView: View {
             }
 
             Spacer()
+
+            // Imported external HUD preset actions
+            if let preset = app.importedPreset {
+                Button {
+                    model.removeImportedHUDPreset(forAppPath: app.path)
+                } label: {
+                    Text(tr("移除预设", "Remove Preset", "プリセットを削除"))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.orange)
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+                .controlSize(.small)
+                .help(tr("当前使用外部预设：\(preset.displayName)（优先于专属方案与全局预设）",
+                         "Using external preset: \(preset.displayName) (overrides custom/global profile)",
+                         "外部プリセットを使用中：\(preset.displayName)（個別・全体設定より優先）"))
+            } else {
+                Button {
+                    model.importExternalHUDPreset(forAppPath: app.path)
+                } label: {
+                    Text(tr("导入预设", "Import Preset", "プリセットを読込"))
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help(tr("导入外部 Metal HUD 预设文件；导入后将优先于专属方案与全局预设",
+                         "Import an external Metal HUD preset file; it will take priority over custom/global profiles",
+                         "外部 Metal HUD プリセットを読み込みます。読み込み後は個別・全体設定より優先されます"))
+            }
 
             // Delete App Button in Red Text
             Button(role: .destructive) {

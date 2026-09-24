@@ -3,16 +3,16 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
-    <key>CFBundleDisplayName</key><string>Mac游戏工具箱</string>
+    <key>CFBundleDisplayName</key><string>MetalPilot</string>
     <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
     <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-	    <key>CFBundleShortVersionString</key><string>4.1.0</string>
+	    <key>CFBundleShortVersionString</key><string>4.2.0</string>
     <key>CFBundleVersion</key><string>$(MARKETING_VERSION)</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
-    <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <key>LSMinimumSystemVersion</key><string>26.0</string>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 我是艾文喵</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>

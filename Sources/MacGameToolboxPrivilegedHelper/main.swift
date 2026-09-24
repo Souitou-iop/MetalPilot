@@ -6,10 +6,10 @@ import MacGameToolboxCore
 import Security
 import OSLog
 
-private let serviceName = "macgametoolbox.helper"
-private let installedHelperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
-private let installedPlistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
-private let requirementPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper.requirement"
+private let serviceName = PrivilegedHelperConstants.serviceName
+private let installedHelperPath = PrivilegedHelperConstants.installedHelperPath
+private let installedPlistPath = PrivilegedHelperConstants.installedPlistPath
+private let requirementPath = "\(PrivilegedHelperConstants.installedHelperPath).requirement"
 private enum LegacyHelperConfig {
     static let legacyServiceNames = [
         "com.iven.macgametoolbox.helper",
@@ -35,6 +35,51 @@ private enum LegacyHelperConfig {
 private let hoyoDomains = GamingService.hoyoDomains
 private let logger = Logger(subsystem: "com.iven.macgametoolbox", category: "PrivilegedHelper")
 
+final class HelperLifecycleManager: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "metalpilot.helper.lifecycle")
+    private var activeRequests = 0
+    private var lastActivityTime = Date()
+    private var idleTimer: DispatchSourceTimer?
+    private let idleTimeoutSeconds: TimeInterval
+
+    init(idleTimeoutSeconds: TimeInterval = PrivilegedHelperConstants.idleTimeoutSeconds) {
+        self.idleTimeoutSeconds = idleTimeoutSeconds
+        startIdleTimer()
+    }
+
+    func requestStarted() {
+        queue.async {
+            self.activeRequests += 1
+            self.lastActivityTime = Date()
+        }
+    }
+
+    func requestFinished() {
+        queue.async {
+            self.activeRequests = max(0, self.activeRequests - 1)
+            self.lastActivityTime = Date()
+        }
+    }
+
+    private func startIdleTimer() {
+        idleTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + .seconds(2), repeating: .seconds(2))
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            if self.activeRequests == 0 {
+                let elapsed = Date().timeIntervalSince(self.lastActivityTime)
+                if elapsed >= self.idleTimeoutSeconds {
+                    logger.info("Helper idle timeout reached (\(elapsed, privacy: .public)s >= \(self.idleTimeoutSeconds, privacy: .public)s). Exiting cleanly.")
+                    exit(EXIT_SUCCESS)
+                }
+            }
+        }
+        timer.resume()
+        self.idleTimer = timer
+    }
+}
+
 enum HelperError: LocalizedError {
     case notRoot, invalidClient, invalidArguments, invalidPath, invalidProcess, commandFailed(String)
     var errorDescription: String? {
@@ -50,16 +95,32 @@ enum HelperError: LocalizedError {
 }
 
 final class HelperService: NSObject, PrivilegedHelperXPCProtocol {
+    private let lifecycle: HelperLifecycleManager
+
+    init(lifecycle: HelperLifecycleManager) {
+        self.lifecycle = lifecycle
+        super.init()
+    }
+
     func perform(request: Data, withReply reply: @escaping (Bool, String?) -> Void) {
+        lifecycle.requestStarted()
+        var hasReplied = false
+        let sendReply = { [weak lifecycle] (success: Bool, message: String?) in
+            guard !hasReplied else { return }
+            hasReplied = true
+            reply(success, message)
+            lifecycle?.requestFinished()
+        }
+
         do {
             guard geteuid() == 0 else { throw HelperError.notRoot }
             let request = try JSONDecoder().decode(PrivilegedRequest.self, from: request)
             logger.info("Received request: \(String(describing: request), privacy: .public)")
             try performValidated(request)
-            reply(true, nil)
+            sendReply(true, nil)
         } catch {
             logger.error("Request failed: \(error.localizedDescription, privacy: .public)")
-            reply(false, error.localizedDescription)
+            sendReply(false, error.localizedDescription)
         }
     }
 
@@ -99,7 +160,12 @@ final class HelperService: NSObject, PrivilegedHelperXPCProtocol {
 }
 
 final class ListenerDelegate: NSObject, NSXPCListenerDelegate {
-    private let service = HelperService()
+    private let service: HelperService
+
+    init(service: HelperService) {
+        self.service = service
+        super.init()
+    }
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
         guard trustedClient(connection) else {
@@ -191,9 +257,8 @@ func installPersistentHelper(for appPath: String) throws {
     let plist: [String: Any] = [
         "Label": serviceName,
         "ProgramArguments": [installedHelperPath],
-        "AssociatedBundleIdentifiers": ["com.iven.macgametoolbox"],
-        "MachServices": [serviceName: true],
-        "RunAtLoad": true
+        "AssociatedBundleIdentifiers": [PrivilegedHelperConstants.appBundleIdentifier],
+        "MachServices": [serviceName: true]
     ]
     let plistData = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
     try plistData.write(to: URL(fileURLWithPath: installedPlistPath), options: .atomic)
@@ -258,8 +323,41 @@ if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--install" {
         exit(EXIT_FAILURE)
     }
 }
-let delegate = ListenerDelegate()
-let listener = NSXPCListener(machServiceName: serviceName)
-listener.delegate = delegate
-listener.resume()
-RunLoop.current.run()
+final class HelperDaemon: @unchecked Sendable {
+    static let shared = HelperDaemon()
+
+    let lifecycle: HelperLifecycleManager
+    let service: HelperService
+    let delegate: ListenerDelegate
+    let listener: NSXPCListener
+
+    init() {
+        let lifecycle = HelperLifecycleManager()
+        let service = HelperService(lifecycle: lifecycle)
+        let delegate = ListenerDelegate(service: service)
+        let listener = NSXPCListener(machServiceName: serviceName)
+        listener.delegate = delegate
+
+        self.lifecycle = lifecycle
+        self.service = service
+        self.delegate = delegate
+        self.listener = listener
+    }
+
+    func start() {
+        listener.resume()
+        RunLoop.current.run()
+    }
+}
+
+guard geteuid() == 0 else { fatalError(HelperError.notRoot.localizedDescription) }
+if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--install" {
+    do {
+        try installPersistentHelper(for: CommandLine.arguments[2])
+        exit(EXIT_SUCCESS)
+    } catch {
+        fputs("\(error.localizedDescription)\n", stderr)
+        exit(EXIT_FAILURE)
+    }
+}
+HelperDaemon.shared.start()

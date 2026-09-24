@@ -8,7 +8,7 @@ import MacGameToolboxCore
 
 public enum AppVersion {
     public static var current: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "4.1.0"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "4.2.0"
     }
 
     public static var displayString: String {

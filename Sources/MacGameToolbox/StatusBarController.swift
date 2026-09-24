@@ -23,7 +23,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            button.image = NSImage(systemSymbolName: "gamecontroller.fill", accessibilityDescription: "Mac Gaming Toolbox")
+            button.image = NSImage(systemSymbolName: "gamecontroller.fill", accessibilityDescription: "MetalPilot")
             button.image?.isTemplate = true
             button.target = self
             button.action = #selector(togglePopover(_:))
@@ -36,8 +36,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         let hostingController = NSHostingController(
             rootView: MenuBarPopoverView().environmentObject(model)
         )
-        hostingController.preferredContentSize = NSSize(width: 380, height: 500)
-        p.contentSize = NSSize(width: 380, height: 500)
+        let popoverSize = NSSize(width: 380, height: 500)
+        hostingController.preferredContentSize = popoverSize
+        p.contentSize = popoverSize
         p.contentViewController = hostingController
         self.popover = p
         self.statusItem = item

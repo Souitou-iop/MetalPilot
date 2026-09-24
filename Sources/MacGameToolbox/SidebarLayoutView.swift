@@ -45,11 +45,14 @@ public struct SidebarLayoutView: View {
         VStack(alignment: .leading, spacing: 8) {
             // App Branding Title in Sidebar
             HStack(spacing: 10) {
-                Image(systemName: "gamecontroller.fill")
-                    .font(.title2.bold())
-                    .foregroundStyle(Color.accentColor)
+                Image("MetalPilotLogo")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: 30, height: 30)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"))
+                    Text(tr("MetalPilot", "MetalPilot", "MetalPilot"))
                         .font(.headline)
                     Text(AppVersion.displayString)
                         .font(.caption2.monospaced())
@@ -123,7 +126,7 @@ public struct SidebarLayoutView: View {
         HStack(spacing: 8) {
             LiveStatusBadge(
                 model.metalHUDEnabled ? .active : .standby,
-                title: model.metalHUDEnabled ? tr("HUD 启用中", "HUD Active", "HUD 有効") : tr("工具箱就绪", "Toolbox Ready", "ツールボックス待機中")
+                title: model.metalHUDEnabled ? tr("HUD 启用中", "HUD Active", "HUD 有効") : tr("MetalPilot 就绪", "MetalPilot Ready", "MetalPilot 待機中")
             )
             Spacer()
         }

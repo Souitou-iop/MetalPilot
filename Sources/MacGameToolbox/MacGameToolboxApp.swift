@@ -16,7 +16,7 @@ struct MacGameToolboxApp: App {
     }
 
     var body: some Scene {
-        Window(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"), id: "main") {
+        Window(tr("MetalPilot", "MetalPilot", "MetalPilot"), id: "main") {
             ZStack {
                 DashboardView()
                     .environmentObject(model)
@@ -27,12 +27,12 @@ struct MacGameToolboxApp: App {
         .defaultSize(width: 1040, height: 760)
         .commandsReplaced {
             CommandGroup(replacing: .appInfo) {
-                Button(tr("关于 Mac 游戏工具箱", "About Mac Gaming Toolbox", "Macゲームツールボックスについて")) {
+                Button(tr("关于 MetalPilot", "About MetalPilot", "MetalPilot について")) {
                     MenuCommandCoordinator.shared.showAboutPanel()
                 }
             }
             CommandGroup(replacing: .appTermination) {
-                Button(tr("退出 Mac 游戏工具箱", "Quit Mac Gaming Toolbox", "Macゲームツールボックスを終了")) {
+                Button(tr("退出 MetalPilot", "Quit MetalPilot", "MetalPilot を終了")) {
                     MenuCommandCoordinator.shared.quitApplication()
                 }
                 .keyboardShortcut("q")

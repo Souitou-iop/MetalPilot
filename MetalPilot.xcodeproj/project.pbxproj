@@ -28,6 +28,7 @@
 		A10000000000000000000014 /* DiagnosticFileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000008 /* DiagnosticFileLogger.swift */; };
 		A10000000000000000000016 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000009 /* Localization.swift */; };
 		A10000000000000000000017 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F2000000000000000000000A /* Assets.xcassets */; };
+		A10000000000000000000040 /* Metal Pilot.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000001 /* Metal Pilot.icon */; };
 		A1000000000000000000001B /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F50000000000000000000002 /* Security.framework */; };
 		A10000000000000000000020 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* DesignSystem.swift */; };
 		A10000000000000000000021 /* MetalHUDSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000011 /* MetalHUDSectionView.swift */; };
@@ -63,6 +64,7 @@
 			A1000000000000000000003B /* HUDAppLauncherSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000025 /* HUDAppLauncherSheetView.swift */; };
 			A1000000000000000000003C /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000026 /* StatusBarController.swift */; };
 			A1000000000000000000003D /* MenuBarPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000027 /* MenuBarPopoverView.swift */; };
+		A1000000000000000000003E /* IOSHUDLauncherSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000028 /* IOSHUDLauncherSheetView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -131,10 +133,11 @@
 		F30000000000000000000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F30000000000000000000002 /* com.iven.macgametoolbox.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.iven.macgametoolbox.helper.plist; sourceTree = "<group>"; };
 		F30000000000000000000003 /* App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "App-Info.plist"; sourceTree = "<group>"; };
-		F40000000000000000000001 /* Mac 游戏工具箱.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mac 游戏工具箱.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F40000000000000000000001 /* MetalPilot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetalPilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F40000000000000000000002 /* MacGameToolboxPrivilegedHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MacGameToolboxPrivilegedHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 		F50000000000000000000001 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		F50000000000000000000002 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		F60000000000000000000001 /* Metal Pilot.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer; name = "Metal Pilot.icon"; path = "icon/Metal Pilot.icon"; sourceTree = SOURCE_ROOT; };
 			F10000000000000000000010 /* ScalingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scaling/ScalingModels.swift; sourceTree = "<group>"; };
 			F10000000000000000000011 /* ScalingShadersSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scaling/ScalingShadersSource.swift; sourceTree = "<group>"; };
 			F10000000000000000000012 /* MotionEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scaling/MotionEstimator.swift; sourceTree = "<group>"; };
@@ -149,6 +152,7 @@
 			F20000000000000000000025 /* HUDAppLauncherSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDAppLauncherSheetView.swift; sourceTree = "<group>"; };
 			F20000000000000000000026 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 			F20000000000000000000027 /* MenuBarPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarPopoverView.swift; sourceTree = "<group>"; };
+		F20000000000000000000028 /* IOSHUDLauncherSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSHUDLauncherSheetView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				G10000000000000000000002 /* MacGameToolboxCore */,
+				F60000000000000000000001 /* Metal Pilot.icon */,
 				G10000000000000000000003 /* MacGameToolbox */,
 				G10000000000000000000004 /* MacGameToolboxPrivilegedHelper */,
 				G10000000000000000000005 /* Config */,
@@ -245,6 +250,7 @@
 					F20000000000000000000025 /* HUDAppLauncherSheetView.swift */,
 					F20000000000000000000026 /* StatusBarController.swift */,
 					F20000000000000000000027 /* MenuBarPopoverView.swift */,
+					F20000000000000000000028 /* IOSHUDLauncherSheetView.swift */,
 			);
 			name = MacGameToolbox;
 			path = Sources/MacGameToolbox;
@@ -271,7 +277,7 @@
 		G10000000000000000000006 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F40000000000000000000001 /* Mac 游戏工具箱.app */,
+				F40000000000000000000001 /* MetalPilot.app */,
 				F40000000000000000000002 /* MacGameToolboxPrivilegedHelper */,
 			);
 			name = Products;
@@ -280,9 +286,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		T10000000000000000000001 /* Mac游戏工具箱 */ = {
+		T10000000000000000000001 /* MetalPilot */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = L20000000000000000000001 /* Build configuration list for PBXNativeTarget "Mac游戏工具箱" */;
+			buildConfigurationList = L20000000000000000000001 /* Build configuration list for PBXNativeTarget "MetalPilot" */;
 			buildPhases = (
 				S10000000000000000000001 /* Sources */,
 				D10000000000000000000001 /* Frameworks */,
@@ -295,9 +301,9 @@
 			dependencies = (
 				T30000000000000000000001 /* PBXTargetDependency */,
 			);
-			name = "Mac游戏工具箱";
-			productName = "Mac 游戏工具箱";
-			productReference = F40000000000000000000001 /* Mac 游戏工具箱.app */;
+			name = MetalPilot;
+			productName = MetalPilot;
+			productReference = F40000000000000000000001 /* MetalPilot.app */;
 			productType = "com.apple.product-type.application";
 		};
 		T20000000000000000000001 /* MacGameToolboxPrivilegedHelper */ = {
@@ -334,7 +340,7 @@
 					};
 				};
 			};
-			buildConfigurationList = L10000000000000000000001 /* Build configuration list for PBXProject "Mac游戏工具箱" */;
+			buildConfigurationList = L10000000000000000000001 /* Build configuration list for PBXProject "MetalPilot" */;
 			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = zh_CN;
 			hasScannedForEncodings = 0;
@@ -348,7 +354,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				T10000000000000000000001 /* Mac游戏工具箱 */,
+				T10000000000000000000001 /* MetalPilot */,
 				T20000000000000000000001 /* MacGameToolboxPrivilegedHelper */,
 			);
 		};
@@ -360,6 +366,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000017 /* Assets.xcassets in Resources */,
+				A10000000000000000000040 /* Metal Pilot.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -410,6 +417,7 @@
 				A1000000000000000000003B /* HUDAppLauncherSheetView.swift in Sources */,
 				A1000000000000000000003C /* StatusBarController.swift in Sources */,
 				A1000000000000000000003D /* MenuBarPopoverView.swift in Sources */,
+				A1000000000000000000003E /* IOSHUDLauncherSheetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -445,7 +453,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
 			};
@@ -455,7 +463,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
 			};
@@ -464,20 +472,20 @@
 		X20000000000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Metal Pilot";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 4.1.0;
+					CURRENT_PROJECT_VERSION = 4.2.0;
 					DEVELOPMENT_TEAM = HP5WBFL9G3;
 					ENABLE_DEBUG_DYLIB = NO;
 					GENERATE_INFOPLIST_FILE = NO;
 					INFOPLIST_FILE = "Config/App-Info.plist";
-					MACOSX_DEPLOYMENT_TARGET = 14.0;
-					MARKETING_VERSION = 4.1.0;
+					MACOSX_DEPLOYMENT_TARGET = 26.0;
+					MARKETING_VERSION = 4.2.0;
 					PRODUCT_BUNDLE_IDENTIFIER = com.iven.macgametoolbox;
-					PRODUCT_NAME = "Mac 游戏工具箱";
+					PRODUCT_NAME = MetalPilot;
 					PROVISIONING_PROFILE_SPECIFIER = "";
 					SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 					SWIFT_VERSION = 6.0;
@@ -487,19 +495,19 @@
 			X20000000000000000000002 /* Release */ = {
 				isa = XCBuildConfiguration;
 				buildSettings = {
-					ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_APPICON_NAME = "Metal Pilot";
 					CODE_SIGN_IDENTITY = "Apple Development";
 					"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 					CODE_SIGN_STYLE = Automatic;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 4.1.0;
+					CURRENT_PROJECT_VERSION = 4.2.0;
 					DEVELOPMENT_TEAM = HP5WBFL9G3;
 					GENERATE_INFOPLIST_FILE = NO;
 					INFOPLIST_FILE = "Config/App-Info.plist";
-					MACOSX_DEPLOYMENT_TARGET = 14.0;
-					MARKETING_VERSION = 4.1.0;
+					MACOSX_DEPLOYMENT_TARGET = 26.0;
+					MARKETING_VERSION = 4.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iven.macgametoolbox;
-				PRODUCT_NAME = "Mac 游戏工具箱";
+				PRODUCT_NAME = MetalPilot;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -515,7 +523,7 @@
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
 				DEVELOPMENT_TEAM = HP5WBFL9G3;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = macgametoolbox.helper;
 				PRODUCT_NAME = MacGameToolboxPrivilegedHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -533,7 +541,7 @@
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
 				DEVELOPMENT_TEAM = HP5WBFL9G3;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = macgametoolbox.helper;
 				PRODUCT_NAME = MacGameToolboxPrivilegedHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -547,7 +555,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		L10000000000000000000001 /* Build configuration list for PBXProject "Mac游戏工具箱" */ = {
+		L10000000000000000000001 /* Build configuration list for PBXProject "MetalPilot" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				X10000000000000000000001 /* Debug */,
@@ -556,7 +564,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		L20000000000000000000001 /* Build configuration list for PBXNativeTarget "Mac游戏工具箱" */ = {
+		L20000000000000000000001 /* Build configuration list for PBXNativeTarget "MetalPilot" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				X20000000000000000000001 /* Debug */,

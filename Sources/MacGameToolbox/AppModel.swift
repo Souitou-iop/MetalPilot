@@ -50,10 +50,24 @@ final class AppModel: ObservableObject {
     @Published var showingHUDAppLauncher: Bool = false
     @Published var selectedHUDAppPaths: Set<String> = []
 
+    // MARK: iOS Metal HUD launcher (transient, nothing is persisted)
+    @Published var showingIOSHUDLauncher: Bool = false
+    @Published var iosDevices: [IOSDevice] = []
+    @Published var selectedIOSDeviceID: String? = nil
+    @Published var iosApps: [IOSInstalledApp] = []
+    @Published var selectedIOSBundleIdentifier: String? = nil
+    @Published var isRefreshingIOSDevices = false
+    @Published var isRefreshingIOSApps = false
+    @Published var iosDeviceErrorMessage: String? = nil
+    @Published var iosAppErrorMessage: String? = nil
+    @Published var iosLaunchConfirmationApp: IOSInstalledApp? = nil
+    @Published var iosLaunchArgumentsText: String = ""
+
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
     private let diskService: DiskService
     private let gamingService: GamingService
+    private let hudPresetStore = ManagedHUDPresetStore()
     private let hostnameService: HostnameService
     private let cacheService: CacheService
     private let diagnosticsService = DiagnosticsService()
@@ -77,13 +91,13 @@ final class AppModel: ObservableObject {
     func launch() {
         guard !didLaunch else { return }
         didLaunch = true
-        DiagnosticFileLogger.write("App launched, version 4.1.0")
+        DiagnosticFileLogger.write("App launched, version 4.2.0")
         Task {
             do {
                 configuration = try await configurationStore.load()
                 AppLanguage.currentPreference = configuration.languagePreference
                 DispatchQueue.main.async {
-                    let localizedTitle = tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス")
+                    let localizedTitle = tr("MetalPilot", "MetalPilot", "MetalPilot")
                     for window in NSApp.windows where window.canBecomeMain {
                         window.title = localizedTitle
                     }
@@ -254,6 +268,140 @@ final class AppModel: ObservableObject {
         showingHUDAppLauncher = true
     }
 
+    // MARK: - iOS Metal HUD Launcher (transient)
+
+    /// Opens the iOS launcher and kicks off a read-only device refresh.
+    ///
+    /// Nothing here is written to the configuration: device selection and any
+    /// launch arguments live only for the current session.
+    func openIOSHUDLauncher() {
+        showingIOSHUDLauncher = true
+        refreshIOSDevices()
+    }
+
+    func refreshIOSDevices() {
+        guard !isRefreshingIOSDevices else { return }
+        isRefreshingIOSDevices = true
+        iosDeviceErrorMessage = nil
+        Task {
+            defer { isRefreshingIOSDevices = false }
+            do {
+                let devices = try await gamingService.iosDevices()
+                guard !Task.isCancelled else { return }
+                iosDevices = devices
+                iosDeviceErrorMessage = nil
+                if let selected = selectedIOSDeviceID, devices.contains(where: { $0.id == selected }) {
+                    // Keep the current selection; the app list stays valid.
+                } else {
+                    // Selection disappeared (device unplugged) — reset to a fresh state.
+                    selectedIOSDeviceID = devices.first?.id
+                    iosApps = []
+                    selectedIOSBundleIdentifier = nil
+                    iosAppErrorMessage = nil
+                    if selectedIOSDeviceID != nil { refreshIOSApps() }
+                }
+            } catch {
+                iosDevices = []
+                iosApps = []
+                selectedIOSDeviceID = nil
+                selectedIOSBundleIdentifier = nil
+                iosDeviceErrorMessage = error.localizedDescription
+                DiagnosticFileLogger.write("iOS device enumeration failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func selectIOSDevice(_ deviceID: String?) {
+        guard selectedIOSDeviceID != deviceID else { return }
+        selectedIOSDeviceID = deviceID
+        iosApps = []
+        selectedIOSBundleIdentifier = nil
+        iosAppErrorMessage = nil
+        iosLaunchArgumentsText = ""
+        refreshIOSApps()
+    }
+
+    func refreshIOSApps() {
+        guard let deviceID = selectedIOSDeviceID, !isRefreshingIOSApps else { return }
+        isRefreshingIOSApps = true
+        iosAppErrorMessage = nil
+        Task {
+            defer { isRefreshingIOSApps = false }
+            do {
+                let apps = try await gamingService.iosApps(on: deviceID)
+                // Guard against a stale response overwriting a newer device's list.
+                guard !Task.isCancelled, selectedIOSDeviceID == deviceID else { return }
+                iosApps = apps
+                iosAppErrorMessage = nil
+                if let selected = selectedIOSBundleIdentifier, !apps.contains(where: { $0.bundleIdentifier == selected }) {
+                    selectedIOSBundleIdentifier = nil
+                }
+            } catch {
+                guard selectedIOSDeviceID == deviceID else { return }
+                iosApps = []
+                selectedIOSBundleIdentifier = nil
+                iosAppErrorMessage = error.localizedDescription
+                DiagnosticFileLogger.write("iOS app enumeration failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Non-empty launch arguments forwarded to `devicectl` for this session only.
+    var iosLaunchArguments: [String] {
+        iosLaunchArgumentsText
+            .split(whereSeparator: { $0.isNewline })
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Asks for confirmation because the launch always terminates an existing instance.
+    func requestIOSLaunch(with app: IOSInstalledApp) {
+        selectedIOSBundleIdentifier = app.bundleIdentifier
+        iosLaunchConfirmationApp = app
+    }
+
+    func cancelIOSLaunch() {
+        iosLaunchConfirmationApp = nil
+    }
+
+    func confirmIOSLaunch() {
+        guard let app = iosLaunchConfirmationApp else { return }
+        iosLaunchConfirmationApp = nil
+        launchIOSAppWithMetalHUD(app)
+    }
+
+    private func launchIOSAppWithMetalHUD(_ app: IOSInstalledApp) {
+        guard let deviceID = selectedIOSDeviceID else {
+            setTransientStatus(.failed, message: tr("请先选择 iOS 设备", "Select an iOS device first", "先に iOS デバイスを選択してください"))
+            return
+        }
+        let arguments: [String]
+        do {
+            arguments = iosLaunchArguments
+            try GamingService.validateIOSLaunchArguments(arguments)
+        } catch {
+            report(error)
+            return
+        }
+
+        runTask(tr("正在通过 devicectl 启动 \(app.displayName)…", "Launching \(app.displayName) via devicectl…", "devicectl で \(app.displayName) を起動中…")) {
+            try await self.gamingService.launchIOSAppWithMetalHUD(
+                deviceID: deviceID,
+                bundleIdentifier: app.bundleIdentifier,
+                launchArguments: arguments
+            )
+            // A zero exit only means devicectl accepted the request; the HUD
+            // overlay itself is not verified here.
+            return tr("已请求启动 \(app.displayName)。命令执行成功，但游戏内 HUD 画面仍需在设备上自行确认。",
+                      "Requested launch of \(app.displayName). The command succeeded, but confirm the HUD on the device itself.",
+                      "\(app.displayName) の起動を要求しました。コマンドは成功しましたが、HUD 表示は実機で確認してください。")
+        }
+    }
+
+    var canLaunchIOSApp: Bool {
+        selectedIOSDeviceID != nil && selectedIOSBundleIdentifier != nil
+    }
+
     func launchSelectedHUDApps(_ paths: [String]) {
         guard !paths.isEmpty else {
             setTransientStatus(.failed, message: tr("请先勾选要启动的游戏", "Please select at least one game", "起動するゲームを選択してください"))
@@ -263,21 +411,65 @@ final class AppModel: ObservableObject {
         showingHUDAppLauncher = false
         runTask(tr("正在启动所选游戏并注入 Metal HUD…", "Launching selected games with Metal HUD…", "選択したゲームを起動中…")) {
             var launchedNames: [String] = []
+            var failedNames: [String] = []
             for path in paths {
                 let applicationURL = URL(fileURLWithPath: path)
-                let effectiveOpts = self.effectiveOptionsForApp(path: path)
-                try? await self.gamingService.launchWithMetalHUD(applicationPath: path, options: effectiveOpts)
-                self.rememberMetalHUDApp(applicationURL)
                 let name = applicationURL.deletingPathExtension().lastPathComponent
-                launchedNames.append(name)
+                do {
+                    try await self.launchOneAppWithMetalHUD(path: path)
+                    self.rememberMetalHUDApp(applicationURL)
+                    launchedNames.append(name)
+                } catch {
+                    DiagnosticFileLogger.write("Launch failed for \(name): \(error.localizedDescription)")
+                    failedNames.append(name)
+                }
             }
-            return tr("已启动 \(launchedNames.count) 个游戏：\(launchedNames.joined(separator: ", "))",
-                      "Launched \(launchedNames.count) games: \(launchedNames.joined(separator: ", "))",
-                      "\(launchedNames.count) 個のゲームを起動しました：\(launchedNames.joined(separator: ", "))")
+            if failedNames.isEmpty {
+                return tr("已启动 \(launchedNames.count) 个游戏：\(launchedNames.joined(separator: ", "))",
+                          "Launched \(launchedNames.count) games: \(launchedNames.joined(separator: ", "))",
+                          "\(launchedNames.count) 個のゲームを起動しました：\(launchedNames.joined(separator: ", "))")
+            }
+            // Partial or total failure: surface it instead of counting failures as launches.
+            var parts: [String] = []
+            if !launchedNames.isEmpty {
+                parts.append(tr("已启动 \(launchedNames.count) 个：\(launchedNames.joined(separator: ", "))",
+                                "Launched \(launchedNames.count): \(launchedNames.joined(separator: ", "))",
+                                "\(launchedNames.count) 個を起動しました：\(launchedNames.joined(separator: ", "))"))
+            }
+            parts.append(tr("失败 \(failedNames.count) 个：\(failedNames.joined(separator: ", "))",
+                            "Failed \(failedNames.count): \(failedNames.joined(separator: ", "))",
+                            "失敗 \(failedNames.count) 個：\(failedNames.joined(separator: ", "))"))
+            let message = parts.joined(separator: "；")
+            if launchedNames.isEmpty {
+                throw ToolboxError.commandFailed(message)
+            }
+            return message
         }
     }
 
+    /// Launches a single app with Metal HUD, honouring the per-app imported preset
+    /// priority rule. Throws so callers can report real failures.
+    ///
+    /// Priority: when this app has an imported preset, the preset's `MTL_HUD_*`
+    /// values are the sole environment for this launch and `effectiveOptionsForApp`
+    /// is not used. Without a preset the existing per-app/global options apply.
+    /// The two sources are never merged field by field.
+    private func launchOneAppWithMetalHUD(path: String) async throws {
+        let importedPresetPath = configuration.recentMetalHUDApps
+            .first { $0.path == path }?
+            .importedPreset?
+            .path
+        try await gamingService.launchWithMetalHUD(
+            applicationPath: path,
+            options: effectiveOptionsForApp(path: path),
+            importedPresetPath: importedPresetPath
+        )
+    }
+
     func removeAppFromHUDList(path: String) {
+        if let preset = configuration.recentMetalHUDApps.first(where: { $0.path == path })?.importedPreset {
+            cleanManagedPreset(preset)
+        }
         configuration.recentMetalHUDApps.removeAll { $0.path == path }
         configuration.perAppHUDProfiles.removeAll { $0.appPath == path }
         selectedHUDAppPaths.remove(path)
@@ -301,9 +493,8 @@ final class AppModel: ObservableObject {
 
     func launchRecordedAppWithMetalHUD(_ path: String) {
         let applicationURL = URL(fileURLWithPath: path)
-        let effectiveOpts = effectiveOptionsForApp(path: path)
         runTask(tr("正在使用 MetalHUD 启动 App", "Launching app with MetalHUD")) {
-            try await self.gamingService.launchWithMetalHUD(applicationPath: applicationURL.path, options: effectiveOpts)
+            try await self.launchOneAppWithMetalHUD(path: path)
             self.rememberMetalHUDApp(applicationURL)
             return tr("已使用 MetalHUD 打开 \(applicationURL.deletingPathExtension().lastPathComponent)", "Opened \(applicationURL.deletingPathExtension().lastPathComponent) with MetalHUD")
         }
@@ -426,7 +617,7 @@ final class AppModel: ObservableObject {
     private static var defaultReportURLPath: String {
         let support = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first
             ?? NSTemporaryDirectory()
-        return (support as NSString).appendingPathComponent("MacGameToolbox/HUDReports")
+        return (support as NSString).appendingPathComponent("MetalPilot/HUDReports")
     }
 
     func openConsoleApp() {
@@ -448,7 +639,7 @@ final class AppModel: ObservableObject {
             let output = String(data: data, encoding: .utf8) ?? ""
             let support = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first
                 ?? NSTemporaryDirectory()
-            let dir = (support as NSString).appendingPathComponent("MacGameToolbox/HUDLogs")
+            let dir = (support as NSString).appendingPathComponent("MetalPilot/HUDLogs")
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyyMMdd_HHmmss"
@@ -464,12 +655,20 @@ final class AppModel: ObservableObject {
     }
 
     func removeRecentMetalHUDApp(_ app: RecentMetalHUDApp) {
+        if let preset = app.importedPreset {
+            cleanManagedPreset(preset)
+        }
         configuration.recentMetalHUDApps.removeAll { $0.path == app.path }
         selectedHUDAppPaths.remove(app.path)
         saveConfiguration()
     }
 
     func removeRecentMetalHUDApps(paths: Set<String>) {
+        for app in configuration.recentMetalHUDApps where paths.contains(app.path) {
+            if let preset = app.importedPreset {
+                cleanManagedPreset(preset)
+            }
+        }
         configuration.recentMetalHUDApps.removeAll { paths.contains($0.path) }
         selectedHUDAppPaths.subtract(paths)
         saveConfiguration()
@@ -544,7 +743,17 @@ final class AppModel: ObservableObject {
         runningProcesses = []
         selectedProcessIDs.removeAll()
         Task {
-            do { runningProcesses = try await gamingService.runningProcesses() }
+            do {
+                runningProcesses = try await gamingService.runningProcesses().map { process in
+                    SystemProcess(
+                        pid: process.pid,
+                        parentPID: process.parentPID,
+                        command: process.command,
+                        cpuUsage: process.cpuUsage,
+                        applicationPath: NSRunningApplication(processIdentifier: process.pid)?.bundleURL?.path
+                    )
+                }
+            }
             catch { report(error) }
         }
     }
@@ -560,15 +769,69 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func isFavoriteProcess(_ process: SystemProcess) -> Bool {
+        configuration.favoriteProcessNames.contains(process.displayName)
+    }
+
+    func toggleFavoriteProcess(_ process: SystemProcess) {
+        if isFavoriteProcess(process) {
+            removeFavoriteProcess(process.displayName)
+        } else {
+            addFavoriteProcess(process.displayName)
+        }
+    }
+
+    func addFavoriteProcess(_ name: String) {
+        let normalized = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty,
+              !configuration.favoriteProcessNames.contains(normalized),
+              configuration.favoriteProcessNames.count < ConfigurationStore.maxFavoriteProcessNames else { return }
+        configuration.favoriteProcessNames.append(normalized)
+        saveConfiguration()
+    }
+
+    func removeFavoriteProcess(_ name: String) {
+        configuration.favoriteProcessNames.removeAll { $0 == name }
+        saveConfiguration()
+    }
+
+    /// Re-applies the app's existing elevated priority to every running
+    /// process whose display name matches a saved favorite. Never lowers or
+    /// changes the priority level used by the helper.
+    func increaseFavoriteProcessPriority() {
+        let favoriteNames = configuration.favoriteProcessNames
+        guard !favoriteNames.isEmpty else { return }
+        showingProcessSelection = false
+        runTask(tr("正在优化常用进程", "Optimizing favorite processes")) {
+            let processes = try await self.gamingService.runningProcesses()
+            let matches = GamingService.matchingFavoriteProcesses(processes, favoriteNames: favoriteNames)
+            guard !matches.isEmpty else {
+                throw ToolboxError.commandFailed(tr("未检测到收藏的常用进程", "No saved favorite process is running"))
+            }
+            guard matches.count <= ConfigurationStore.maxFavoriteProcessNames else {
+                throw ToolboxError.commandFailed(tr("匹配的常用进程超过 64 个，请编辑常用进程后重试", "More than 64 favorite processes matched; edit favorites and try again"))
+            }
+            self.status.phase = .awaitingAuthorization
+            try await self.privileged.perform(.renice(matches.map(\.pid)))
+            return tr("已提高 \(matches.count) 个常用进程的优先级", "Updated \(matches.count) favorite process(es)")
+        }
+    }
+
     func setHoYoWaitSeconds(_ seconds: Int) {
         guard [10, 15, 20].contains(seconds) else { return }
         configuration.hoYoWaitSeconds = seconds
         saveConfiguration()
     }
 
+    func setDoesNotRaiseHoYoPriority(_ enabled: Bool) {
+        configuration.doesNotRaiseHoYoPriority = enabled
+        saveConfiguration()
+    }
+
     func startHoYoAssistant() {
         guard hoyoTask == nil else { return }
         let waitSeconds = configuration.hoYoWaitSeconds
+        let doesNotRaisePriority = configuration.doesNotRaiseHoYoPriority
         isHoYoAssistantRunning = true
         status = TaskStatus(phase: .awaitingAuthorization, message: tr("正在启用系统辅助服务", "Enabling system helper"), progress: 0, log: [])
         hoyoTask = Task {
@@ -584,19 +847,35 @@ final class AppModel: ObservableObject {
                 }
 
                 try Task.checkCancellation()
+                // The opt-out keeps the hosts rewrite+restore path intact and
+                // only skips the priority step, so the game's launch handshake
+                // is left exactly as macOS scheduled it.
+                let processes = try await gamingService.wineProcesses()
+                let priorityPIDs = GamingService.hoYoPriorityPIDs(
+                    doesNotRaisePriority: doesNotRaisePriority,
+                    wineProcesses: processes
+                )
+
+                if priorityPIDs == nil {
+                    try await gamingService.finishHoYoLaunch()
+                    let logs = status.log
+                    setTransientStatus(.succeeded, message: tr("倒计时结束，未提升 Wine 进程优先级并已恢复 hosts", "Countdown complete; Wine process priority was unchanged and hosts were restored"))
+                    status.log = logs
+                    return
+                }
+
                 status.message = tr("正在检测 Wine 进程", "Detecting Wine processes")
                 status.log.append(tr("等待完成，开始检测 Wine 进程", "Wait complete; detecting Wine processes"))
-                let processes = try await gamingService.wineProcesses()
                 DiagnosticFileLogger.write("HoYo Wine check after \(waitSeconds) seconds: \(processes.count) process(es)")
-                guard !processes.isEmpty else {
+                guard let priorityPIDs, !priorityPIDs.isEmpty else {
                     throw ToolboxError.commandFailed(tr("\(waitSeconds) 秒后未检测到 Wine 进程", "No Wine process detected after \(waitSeconds) seconds"))
                 }
 
                 status.phase = .awaitingAuthorization
-                try await privileged.perform(.renice(processes.map(\.pid)))
+                try await privileged.perform(.renice(priorityPIDs))
                 try await gamingService.finishHoYoLaunch()
                 let logs = status.log
-                setTransientStatus(.succeeded, message: tr("已优化 \(processes.count) 个进程并恢复 hosts", "Updated \(processes.count) processes and restored hosts"))
+                setTransientStatus(.succeeded, message: tr("已优化 \(priorityPIDs.count) 个进程并恢复 hosts", "Updated \(priorityPIDs.count) processes and restored hosts"))
                 status.log = logs
             } catch is CancellationError {
                 try? await gamingService.finishHoYoLaunch()
@@ -731,12 +1010,35 @@ final class AppModel: ObservableObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { self.showingCacheConfirmation = true }
             return
         }
-        guard let scan = cacheScan else { return }
+        // Incomplete scans are surfaced in the alert instead of blocking safe
+        // (user-only) cleanup; the risky full cleanup still requires a complete scan.
+        guard let scan = cacheScan, scan.inaccessibleTargets.isEmpty || configuration.excludesSensitiveCacheFiles else { return }
         runTask(tr("正在清理缓存", "Cleaning caches")) {
             if !scan.systemTargets.isEmpty { self.status.phase = .awaitingAuthorization }
-            try await self.cacheService.clear(scan)
-            return tr("缓存清理完成", "Cache cleaning completed")
+            let result = try await self.cacheService.clear(scan)
+            for failure in result.failedItems {
+                DiagnosticFileLogger.write("Cache cleanup failed: \(failure.path.path) - \(failure.reason)")
+            }
+            if result.failedItems.isEmpty {
+                return tr("缓存清理完成，已清理 \(result.removedCount) 项", "Cache cleaning completed; removed \(result.removedCount) item(s)")
+            }
+            return tr(
+                "缓存清理完成，已清理 \(result.removedCount) 项，\(result.failedItems.count) 项无法清理",
+                "Cache cleaning completed; removed \(result.removedCount) item(s), \(result.failedItems.count) item(s) could not be removed"
+            )
         }
+    }
+
+    func openFullDiskAccessSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    /// The full (system-touching) cleanup stays blocked while the scan is incomplete,
+    /// so the UI can offer Full Disk Access guidance instead of proceeding blindly.
+    var isCacheCleanupBlockedByIncompleteScan: Bool {
+        guard let scan = cacheScan else { return false }
+        return !configuration.excludesSensitiveCacheFiles && !scan.inaccessibleTargets.isEmpty
     }
 
     func setExcludesSensitiveCacheFiles(_ enabled: Bool) {
@@ -765,7 +1067,7 @@ final class AppModel: ObservableObject {
     func requestDiagnosticsExport() {
         let panel = NSSavePanel()
         panel.canCreateDirectories = true
-        panel.nameFieldStringValue = tr("Mac游戏工具箱-诊断-\(Self.diagnosticTimestamp()).txt", "MacGameToolbox-Diagnostics-\(Self.diagnosticTimestamp()).txt")
+        panel.nameFieldStringValue = tr("MetalPilot-诊断-\(Self.diagnosticTimestamp()).txt", "MetalPilot-Diagnostics-\(Self.diagnosticTimestamp()).txt")
         panel.title = tr("导出诊断日志", "Export Diagnostics")
         panel.prompt = tr("导出", "Export")
         guard panel.runModal() == .OK, let destination = panel.url else { return }
@@ -939,7 +1241,7 @@ final class AppModel: ObservableObject {
         saveConfiguration()
         objectWillChange.send()
         DispatchQueue.main.async {
-            let localizedTitle = tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス")
+            let localizedTitle = tr("MetalPilot", "MetalPilot", "MetalPilot")
             for window in NSApp.windows where window.canBecomeMain {
                 window.title = localizedTitle
             }
@@ -1093,6 +1395,70 @@ final class AppModel: ObservableObject {
 
     func effectiveOptionsForApp(path: String) -> MetalHUDOptions {
         profileForApp(path: path)?.options ?? configuration.metalHUDOptions
+    }
+
+    // MARK: - Imported External HUD Presets
+
+    func importedPresetForApp(path: String) -> ImportedHUDPreset? {
+        configuration.recentMetalHUDApps.first { $0.path == path }?.importedPreset
+    }
+
+    /// Prompts for an external Metal HUD preset file, validates it, copies it into the
+    /// managed directory and records it against the app. Invalid files are rejected
+    /// before any copy is written, and the failure is reported to the user.
+    func importExternalHUDPreset(forAppPath appPath: String) {
+        let panel = NSOpenPanel()
+        panel.title = tr("选择 Metal HUD 预设文件", "Choose a Metal HUD preset file")
+        panel.prompt = tr("导入", "Import")
+        panel.allowsMultipleSelection = false
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.resolvesAliases = true
+        if let plist = UTType(filenameExtension: "plist") {
+            panel.allowedContentTypes = [plist, .propertyList, .xml]
+        }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        let appName = ((appPath as NSString).lastPathComponent as NSString).deletingPathExtension
+        Task { @MainActor in
+            do {
+                let imported = try await hudPresetStore.importPreset(from: url, forApplicationPath: appPath)
+                if let idx = self.configuration.recentMetalHUDApps.firstIndex(where: { $0.path == appPath }) {
+                    // Replace any previously imported preset so we do not orphan its copy.
+                    if let previous = self.configuration.recentMetalHUDApps[idx].importedPreset {
+                        await self.hudPresetStore.removeManagedPreset(atPath: previous.path)
+                    }
+                    self.configuration.recentMetalHUDApps[idx].importedPreset = imported
+                } else {
+                    self.configuration.recentMetalHUDApps.insert(
+                        RecentMetalHUDApp(path: appPath, displayName: appName, importedPreset: imported),
+                        at: 0
+                    )
+                }
+                self.saveConfiguration()
+                self.setTransientStatus(.succeeded, message: tr("已导入 \(appName) 的外部 HUD 预设：\(imported.displayName)", "Imported external HUD preset for \(appName): \(imported.displayName)"))
+            } catch {
+                self.report(error)
+            }
+        }
+    }
+
+    /// Detaches an imported preset from an app and deletes its managed copy.
+    func removeImportedHUDPreset(forAppPath appPath: String) {
+        guard let idx = configuration.recentMetalHUDApps.firstIndex(where: { $0.path == appPath }),
+              let preset = configuration.recentMetalHUDApps[idx].importedPreset else { return }
+        configuration.recentMetalHUDApps[idx].importedPreset = nil
+        saveConfiguration()
+        cleanManagedPreset(preset)
+        let appName = ((appPath as NSString).lastPathComponent as NSString).deletingPathExtension
+        setTransientStatus(.succeeded, message: tr("已移除 \(appName) 的外部 HUD 预设，将回退到专属方案/全局预设", "Removed the external HUD preset for \(appName); falling back to the custom/global profile"))
+    }
+
+    /// Best-effort managed copy cleanup; failures never surface to the main flow.
+    private func cleanManagedPreset(_ preset: ImportedHUDPreset) {
+        Task.detached { [hudPresetStore] in
+            await hudPresetStore.removeManagedPreset(atPath: preset.path)
+        }
     }
 
     // MARK: - Performance Snapshot Exporter

@@ -7,8 +7,8 @@ DERIVED_DATA="${DERIVED_DATA:-$ROOT/build/DerivedData}"
 ARCHS="${ARCHS:-arm64}"
 
 xcodebuild \
-  -project "$ROOT/Mac游戏工具箱.xcodeproj" \
-  -scheme "Mac游戏工具箱" \
+  -project "$ROOT/MetalPilot.xcodeproj" \
+  -scheme "MetalPilot" \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA" \
   ARCHS="$ARCHS" \
@@ -16,7 +16,7 @@ xcodebuild \
   CODE_SIGNING_ALLOWED=NO \
   build
 
-APP="$DERIVED_DATA/Build/Products/Release/Mac 游戏工具箱.app"
+APP="$DERIVED_DATA/Build/Products/Release/MetalPilot.app"
 HELPER="$APP/Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper"
 
 # Detect persistent code signing identity

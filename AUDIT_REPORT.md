@@ -1,8 +1,8 @@
-# Mac 游戏工具箱 (Mac Gaming Toolbox) 全功能深度代码审查报告
+# MetalPilot (前 Mac 游戏工具箱 / Mac Gaming Toolbox) 全功能深度代码审查报告
 
 **审查版本**：v3.2.0 (Fork Enhanced Edition)  
 **审查日期**：2026-08-16  
-**目标架构**：macOS 14.0+ / Apple Silicon (ARM64)  
+**目标架构**：macOS 26+ / Apple Silicon (ARM64)
 **审查结论**：✅ **100% 通过（0 漏洞、0 内存泄露隐患、严格特权隔离与并发安全）**
 
 ---
@@ -23,8 +23,8 @@
 
 ### 1.1 模块分层与特权隔离
 项目严格遵循职责单一与最小特权原则，划分为三大独立物理 Target：
-- **`MacGameToolboxCore`（核心引擎与业务库）**：负责渲染管线、运动估计、数据持久化、进程探测与 XPC 客户端通信。
-- **`MacGameToolbox`（主 App 交互层）**：100% 纯原生 SwiftUI + AppKit 呈现，运行于普通用户权限，不执行任何高危提权操作。
+- **`MacGameToolboxCore`（核心引擎与业务库，模块名为保留的内部技术标识）**：负责渲染管线、运动估计、数据持久化、进程探测与 XPC 客户端通信。
+- **`MacGameToolbox`（主 App 交互层，模块名为保留的内部技术标识）**：100% 纯原生 SwiftUI + AppKit 呈现，运行于普通用户权限，不执行任何高危提权操作。
 - **`MacGameToolboxPrivilegedHelper`（root 特权辅助守护进程）**：独立 LaunchDaemon，仅响应严格白名单化的 XPC 请求（修改 hosts、renice 调整优先级、清理系统缓存等）。
 
 ### 1.2 XPC 通信与安全校验审查

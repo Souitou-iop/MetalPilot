@@ -39,7 +39,7 @@ public final class ScalingEngine: NSObject, MTKViewDelegate, @unchecked Sendable
         return pendingErrors.isEmpty ? nil : pendingErrors.removeFirst()
     }
 
-    private let processingQueue = DispatchQueue(label: "com.macgametoolbox.scaling.engine", qos: .userInteractive)
+    private let processingQueue = DispatchQueue(label: "com.metalpilot.scaling.engine", qos: .userInteractive)
     private static let maxInFlight = 3
     private let inFlightSemaphore = DispatchSemaphore(value: ScalingEngine.maxInFlight)
 

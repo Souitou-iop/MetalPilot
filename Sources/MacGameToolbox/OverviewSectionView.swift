@@ -23,7 +23,7 @@ public struct OverviewSectionView: View {
 
             // Quick Boost Cards (3x2 Grid)
             VStack(alignment: .leading, spacing: 14) {
-                Text(tr("快捷工具箱", "Quick Actions", "クイックツール"))
+                Text(tr("快捷操作", "Quick Actions", "クイック操作"))
                     .font(.headline)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 16)], spacing: 16) {

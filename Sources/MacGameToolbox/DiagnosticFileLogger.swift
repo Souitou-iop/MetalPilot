@@ -5,10 +5,10 @@ enum DiagnosticFileLogger {
 
     static var directoryURL: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/MacGameToolbox", isDirectory: true)
+            .appendingPathComponent("Library/Logs/MetalPilot", isDirectory: true)
     }
 
-    static var logURL: URL { directoryURL.appendingPathComponent("MacGameToolbox.log") }
+    static var logURL: URL { directoryURL.appendingPathComponent("MetalPilot.log") }
 
     static func write(_ message: String) {
         lock.lock()

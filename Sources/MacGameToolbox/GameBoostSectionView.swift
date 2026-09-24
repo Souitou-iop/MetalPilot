@@ -229,6 +229,20 @@ public struct GameBoostSectionView: View {
                         .disabled(model.isHoYoAssistantRunning)
                     }
 
+                    Toggle(isOn: Binding(
+                        get: { model.configuration.doesNotRaiseHoYoPriority },
+                        set: { model.setDoesNotRaiseHoYoPriority($0) }
+                    )) {
+                        Text(tr("不提升优先级", "Do not raise priority", "優先度を変更しない"))
+                            .font(.subheadline)
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .disabled(model.isHoYoAssistantRunning)
+                    .help(tr("仅切换 hosts，倒计时结束后仍会恢复正常，但不调整 Wine 进程优先级。",
+                             "Only switches hosts; hosts are still restored after the countdown, but Wine process priority is left untouched.",
+                             "hostsのみ切り替えます。カウントダウン後もhostsは復元しますが、Wineプロセスの優先度は変更しません。"))
+
                     Spacer()
                 }
             }

@@ -4,6 +4,7 @@ public actor ConfigurationStore {
     public static let maxDefaultPaths = Int.max
     public static let maxPresets = 5
     public static let maxRecentMetalHUDApps = 12
+    public static let maxFavoriteProcessNames = 64
 
     private let configurationURL: URL
     private let fileManager: FileManager
@@ -39,6 +40,7 @@ public actor ConfigurationStore {
         normalized.diskPresets = Array(uniquePresets(configuration.diskPresets).prefix(Self.maxPresets))
         normalized.restorableDiskMounts = uniquePresets(configuration.restorableDiskMounts)
         normalized.recentMetalHUDApps = Array(uniqueRecentApps(configuration.recentMetalHUDApps).prefix(Self.maxRecentMetalHUDApps))
+        normalized.favoriteProcessNames = Array(uniqueFavoriteProcessNames(configuration.favoriteProcessNames).prefix(Self.maxFavoriteProcessNames))
         if ![10, 15, 20].contains(normalized.hoYoWaitSeconds) { normalized.hoYoWaitSeconds = 15 }
         normalized.metalHUDOptions = Self.normalizedMetalHUDOptions(normalized.metalHUDOptions)
         try fileManager.createDirectory(at: configurationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -114,5 +116,12 @@ public actor ConfigurationStore {
     private func uniqueRecentApps(_ values: [RecentMetalHUDApp]) -> [RecentMetalHUDApp] {
         var seen = Set<String>()
         return values.filter { seen.insert($0.path).inserted }
+    }
+
+    private func uniqueFavoriteProcessNames(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 }

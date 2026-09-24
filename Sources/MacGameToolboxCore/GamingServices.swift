@@ -131,20 +131,122 @@ public actor GamingService {
     }
 
     public func launchWithMetalHUD(applicationPath: String, options: MetalHUDOptions = MetalHUDOptions()) async throws {
+        try await launchWithMetalHUD(
+            applicationPath: applicationPath,
+            options: options,
+            importedPresetPath: nil
+        )
+    }
+
+    /// Preset-aware launch entry point.
+    ///
+    /// Priority rule (do not change): when `importedPresetPath` points at an
+    /// externally imported preset, that preset's `MTL_HUD_*` values are the *sole*
+    /// source of the per-launch HUD environment and `options` is ignored entirely.
+    /// When there is no imported preset, `options` (i.e. `AppModel.effectiveOptionsForApp`)
+    /// is used exactly as before. The two sources are never merged field by field.
+    ///
+    /// Without an imported preset, the existing global profile is refreshed first.
+    /// With an imported preset, the global profile is left untouched: writing the
+    /// per-App/global options here would contradict the preset's launch-scoped
+    /// priority and could contaminate unrelated Wine/CrossOver processes.
+    /// The final launch keeps the fork's `/usr/bin/open -n -a <app> --env KEY=VALUE` shape.
+    public func launchWithMetalHUD(applicationPath: String, options: MetalHUDOptions, importedPresetPath: String?) async throws {
         let applicationURL = URL(fileURLWithPath: applicationPath).standardizedFileURL
         guard applicationURL.pathExtension.lowercased() == "app",
               FileManager.default.fileExists(atPath: applicationURL.path) else {
             throw ToolboxError.invalidPath(applicationPath)
         }
-        // 1. 同步将目标 App 的 HUD 配置写入系统 launchctl 环境变量与 defaults，确保 Wine / CrossOver / 容器守护进程 100% 能够继承并读取
-        try? await setMetalHUD(enabled: true, options: options)
 
-        // 2. 同时使用 `open -n -a ... --env ...` 强制启动全新实例并精准注入环境变量，防止复用无环境变量的旧进程
+        // Parse (and validate) the imported preset *before* touching launchctl so a
+        // broken preset surfaces as a real failure instead of a silent global change.
+        let presetEnvironment: [String]?
+        if let importedPresetPath {
+            presetEnvironment = try Self.metalHUDEnvironment(fromPresetAt: importedPresetPath)
+        } else {
+            presetEnvironment = nil
+        }
+
+        // Refresh the legacy global profile only for profile-based launches.
+        // An imported preset must remain launch-scoped; otherwise the old profile
+        // can override it for processes that inherit launchctl/defaults values.
+        if presetEnvironment == nil {
+            try? await setMetalHUD(enabled: true, options: options)
+        }
+
+        // Use `open -n -a ... --env ...` to launch a fresh instance with the
+        // selected environment rather than reusing an instance without it.
         var arguments = ["-n", "-a", applicationURL.path]
-        for arg in Self.metalHUDEnvArgs(for: options, includeEnabled: true) {
+        let envArgs = presetEnvironment ?? Self.metalHUDEnvArgs(for: options, includeEnabled: true)
+        for arg in envArgs {
             arguments.append(contentsOf: ["--env", arg])
         }
         _ = try await runner.run("/usr/bin/open", arguments: arguments)
+    }
+
+    // MARK: - Imported Metal HUD presets
+
+    /// Parses a Metal HUD preset property list into `KEY=VALUE` environment strings.
+    ///
+    /// Only `MTL_HUD_`-prefixed keys are kept. Booleans become `1`/`0`, string and
+    /// numeric `MTL_HUD_ALIGNMENT` values are translated to the text alignment names,
+    /// and any other unsupported value type throws a distinguishable error. The
+    /// returned list is always sorted by key and always contains `MTL_HUD_ENABLED=1`.
+    public static func metalHUDEnvironment(fromPresetAt presetPath: String) throws -> [String] {
+        let presetURL = URL(fileURLWithPath: presetPath)
+        guard FileManager.default.fileExists(atPath: presetURL.path),
+              !presetURL.hasDirectoryPath else {
+            throw ToolboxError.invalidPath(presetPath)
+        }
+        guard let data = FileManager.default.contents(atPath: presetURL.path) else {
+            throw ToolboxError.commandFailed(coreText("无法读取 MetalHUD 预设文件：\(presetURL.lastPathComponent)", "Unable to read the MetalHUD preset file: \(presetURL.lastPathComponent)", "MetalHUD プリセットを読み込めません：\(presetURL.lastPathComponent)"))
+        }
+        let value: Any
+        do {
+            value = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        } catch {
+            throw ToolboxError.malformedOutput(coreText("MetalHUD 预设不是有效的属性列表：\(presetURL.lastPathComponent)", "The MetalHUD preset is not a valid property list: \(presetURL.lastPathComponent)", "MetalHUD プリセットが有効なプロパティリストではありません：\(presetURL.lastPathComponent)"))
+        }
+        guard let properties = value as? [String: Any] else {
+            throw ToolboxError.malformedOutput(coreText("MetalHUD 预设顶层必须是字典", "The MetalHUD preset must be a dictionary at the top level", "MetalHUD プリセットの最上位は辞書である必要があります"))
+        }
+        var entries = try properties.keys.sorted().compactMap { key -> String? in
+            guard key.hasPrefix("MTL_HUD_") else { return nil }
+            guard let text = metalHUDValue(properties[key], for: key) else {
+                throw ToolboxError.malformedOutput(coreText("MetalHUD 预设包含不支持的值：\(key)", "The MetalHUD preset contains an unsupported value: \(key)", "MetalHUD プリセットに未対応の値があります：\(key)"))
+            }
+            return "\(key)=\(text)"
+        }
+        // A preset always turns the HUD on for the launch it is attached to.
+        if !entries.contains(where: { $0.hasPrefix("MTL_HUD_ENABLED=") }) {
+            entries.insert("MTL_HUD_ENABLED=1", at: 0)
+        }
+        return entries
+    }
+
+    private static func metalHUDValue(_ value: Any?, for key: String) -> String? {
+        if let string = value as? String {
+            if key == "MTL_HUD_ALIGNMENT", let number = Int(string) {
+                return legacyAlignmentName(number) ?? string
+            }
+            return string
+        }
+        guard let number = value as? NSNumber else { return nil }
+        if key == "MTL_HUD_ALIGNMENT", let alignment = legacyAlignmentName(number.intValue) {
+            return alignment
+        }
+        if CFGetTypeID(number) == CFBooleanGetTypeID() {
+            return number.boolValue ? "1" : "0"
+        }
+        return number.stringValue
+    }
+
+    private static func legacyAlignmentName(_ value: Int) -> String? {
+        [
+            10: "topleft", 11: "topcenter", 12: "topright",
+            14: "centerleft", 15: "centered", 16: "centerright",
+            18: "bottomleft", 19: "bottomcenter", 20: "bottomright"
+        ][value]
     }
 
     private static let allMetalHUDEnvKeys: [String] = [
@@ -237,6 +339,286 @@ public actor GamingService {
         return args
     }
 
+    // MARK: - iOS device control (xcrun devicectl)
+
+    /// Hard cap on how many extra launch arguments may be handed to devicectl.
+    /// Keeps a runaway UI state from turning into an unbounded command line.
+    public static let maxIOSLaunchArgumentCount = 32
+
+    /// Reads Xcode's CoreDevice inventory. Read-only: it never talks to a device.
+    ///
+    /// Devices whose hardware platform is not iOS/iPadOS are dropped, so a Mac,
+    /// Apple TV or Apple Watch that CoreDevice happens to list can never be
+    /// presented as a launchable "iPhone/iPad".
+    public func iosDevices() async throws -> [IOSDevice] {
+        let result = try await Self.runDevicectl(runner: runner, arguments: ["devicectl", "list", "devices", "--json-output", "-"])
+        return try Self.parseIOSDevices(result.outputString)
+    }
+
+    /// Lists the apps CoreDevice can see on one selected iOS device.
+    public func iosApps(on deviceID: String) async throws -> [IOSInstalledApp] {
+        guard Self.isIOSDeviceIdentifier(deviceID) else { throw ToolboxError.invalidPath(deviceID) }
+        let result = try await Self.runDevicectl(
+            runner: runner,
+            arguments: ["devicectl", "device", "info", "apps", "--include-all-apps", "--device", deviceID, "--json-output", "-"]
+        )
+        return try Self.parseIOSApps(result.outputString)
+    }
+
+    /// Launches one app on a connected iOS device with a process-scoped Metal HUD
+    /// environment, optionally followed by extra app launch arguments.
+    ///
+    /// Deliberately scoped and small for this first version:
+    /// - never routed through the privileged helper, and never persisted;
+    /// - `--terminate-existing` is always passed, so an already-running instance
+    ///   of the target app is terminated (unsaved progress may be lost). Callers
+    ///   must warn the user before invoking this;
+    /// - a successful `devicectl` exit only proves the command was accepted, not
+    ///   that the HUD was actually drawn by the app.
+    public func launchIOSAppWithMetalHUD(
+        deviceID: String,
+        bundleIdentifier: String,
+        launchArguments: [String] = []
+    ) async throws {
+        guard Self.isIOSDeviceIdentifier(deviceID) else { throw ToolboxError.invalidPath(deviceID) }
+        guard Self.isIOSBundleIdentifier(bundleIdentifier) else { throw ToolboxError.invalidPath(bundleIdentifier) }
+        try Self.validateIOSLaunchArguments(launchArguments)
+
+        var arguments = [
+            "devicectl", "device", "process", "launch",
+            "--device", deviceID,
+            "--environment-variables", #"{"MTL_HUD_ENABLED":"1"}"#,
+            "--terminate-existing",
+            bundleIdentifier
+        ]
+        // Each extra argument is forwarded as its own argv entry after a single
+        // "--" separator; nothing is joined into a shell string.
+        if !launchArguments.isEmpty {
+            arguments.append("--")
+            arguments.append(contentsOf: launchArguments)
+        }
+        _ = try await Self.runDevicectl(runner: runner, arguments: arguments)
+    }
+
+    /// Parses `devicectl list devices --json-output -`.
+    public static func parseIOSDevices(_ text: String) throws -> [IOSDevice] {
+        let rows = try jsonRows(text, arrayKeys: ["devices"])
+        var seen = Set<String>()
+        return rows.compactMap { row -> IOSDevice? in
+            // Platform gate first: anything that is not clearly iOS/iPadOS is dropped.
+            guard isIOSPlatform(row) else { return nil }
+            guard let identifier = string(in: row, keys: ["identifier", "udid", "deviceIdentifier"]),
+                  isIOSDeviceIdentifier(identifier),
+                  seen.insert(identifier).inserted else { return nil }
+            // Use schema-specific paths. A recursive "find any name" lookup is
+            // unsafe here because real devicectl rows also contain capability,
+            // CPU, and OS-build dictionaries with unrelated `name`/`state` keys.
+            let name = string(at: [
+                ["name"], ["deviceName"],
+                ["properties", "state", "name"],
+                ["deviceProperties", "name"]
+            ], in: row) ?? identifier
+            return IOSDevice(
+                id: identifier,
+                name: name,
+                model: string(at: [
+                    ["properties", "hardware", "productType"],
+                    ["hardwareProperties", "productType"],
+                    ["properties", "hardware", "modelName"],
+                    ["deviceProperties", "modelName"],
+                    ["modelName"], ["model"]
+                ], in: row) ?? "",
+                osVersion: string(at: [
+                    ["properties", "software", "osVersionNumber", "stringValue"],
+                    ["properties", "software", "osVersionNumber"],
+                    ["deviceProperties", "osVersionNumber", "stringValue"],
+                    ["deviceProperties", "osVersionNumber"],
+                    ["properties", "software", "osVersion"], ["osVersion"]
+                ], in: row) ?? "",
+                state: string(at: [
+                    ["properties", "connection", "state"],
+                    ["properties", "state", "bootState"],
+                    ["deviceProperties", "bootState"],
+                    ["connectionState"], ["state"]
+                ], in: row) ?? ""
+            )
+        }
+        .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+    }
+
+    /// Parses `devicectl device info apps --json-output -`.
+    public static func parseIOSApps(_ text: String) throws -> [IOSInstalledApp] {
+        let rows = try jsonRows(text, arrayKeys: ["apps", "applications"])
+        var seen = Set<String>()
+        return rows.compactMap { row -> IOSInstalledApp? in
+            guard let bundleIdentifier = string(in: row, keys: ["bundleIdentifier", "bundleID"]),
+                  isIOSBundleIdentifier(bundleIdentifier),
+                  seen.insert(bundleIdentifier).inserted else { return nil }
+            return IOSInstalledApp(
+                bundleIdentifier: bundleIdentifier,
+                displayName: string(in: row, keys: ["displayName", "name"]) ?? bundleIdentifier,
+                version: string(in: row, keys: ["shortVersion", "version", "CFBundleShortVersionString"]) ?? ""
+            )
+        }
+        .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+    }
+
+    /// Rejects argument lists that would be ambiguous or unrepresentable on a
+    /// command line: NUL and newline terminators, plus an overall count cap.
+    public static func validateIOSLaunchArguments(_ arguments: [String]) throws {
+        guard arguments.count <= maxIOSLaunchArgumentCount else {
+            throw ToolboxError.invalidPath(coreText(
+                "iOS 启动参数过多（最多 \(maxIOSLaunchArgumentCount) 个）",
+                "Too many iOS launch arguments (max \(maxIOSLaunchArgumentCount))",
+                "iOS 起動引数が多すぎます（最大 \(maxIOSLaunchArgumentCount) 個）"
+            ))
+        }
+        for argument in arguments where argument.contains("\0") || argument.contains("\n") || argument.contains("\r") {
+            throw ToolboxError.invalidPath(coreText(
+                "iOS 启动参数不能包含空字符或换行",
+                "iOS launch arguments cannot contain NUL or newline characters",
+                "iOS 起動引数に NUL や改行は使用できません"
+            ))
+        }
+    }
+
+    /// Runs devicectl through `/usr/bin/xcrun` and turns the two "toolchain is
+    /// not usable" failures into actionable messages instead of raw exit codes.
+    private static func runDevicectl(runner: any CommandRunning, arguments: [String]) async throws -> CommandResult {
+        do {
+            return try await runner.run("/usr/bin/xcrun", arguments: arguments)
+        } catch let error as ToolboxError {
+            throw mapDevicectlError(error)
+        } catch {
+            throw error
+        }
+    }
+
+    private static func mapDevicectlError(_ error: ToolboxError) -> Error {
+        guard case .commandFailed(let message) = error else { return error }
+        let lowered = message.lowercased()
+        if lowered.contains("not a developer tool") || lowered.contains("unable to find utility")
+            || lowered.contains("xcrun: error") || lowered.contains("requires xcode") {
+            return ToolboxError.commandFailed(coreText(
+                "未找到可用的 Xcode 工具链。请安装完整版 Xcode，并用 xcode-select --switch 将其设为活动开发者目录。",
+                "No usable Xcode toolchain was found. Install the full Xcode and select it with xcode-select --switch.",
+                "利用可能な Xcode ツールチェーンが見つかりません。完全版 Xcode をインストールし、xcode-select --switch で選択してください。"
+            ))
+        }
+        if lowered.contains("error 1000") || lowered.contains("specified device was not found") {
+            return ToolboxError.commandFailed(coreText(
+                "未找到该设备。请确认设备已连接、已信任本机并在 Xcode 中完成配对。",
+                "The device could not be found. Confirm it is connected, trusted, and paired in Xcode.",
+                "デバイスが見つかりません。接続・信頼・Xcode でのペアリングを確認してください。"
+            ))
+        }
+        return error
+    }
+
+    /// True only when a raw devicectl device row clearly describes an iPhone/iPad.
+    ///
+    /// The platform/deviceType values are read with nested lookups because
+    /// `devicectl` has moved hardware fields between `hardwareProperties`,
+    /// `deviceProperties` and the newer `properties` dictionary.
+    private static func isIOSPlatform(_ row: [String: Any]) -> Bool {
+        let platform = string(at: [
+            ["properties", "hardware", "platform"],
+            ["hardwareProperties", "platform"], ["platform"]
+        ], in: row)?.lowercased()
+        let deviceType = string(at: [
+            ["properties", "hardware", "deviceType"],
+            ["hardwareProperties", "deviceType"], ["deviceType"]
+        ], in: row)?.lowercased()
+
+        if let platform {
+            // Accept "iOS", "iPadOS" and combined values such as "iOS, iPadOS".
+            // NOTE: `"ipados".contains("ios")` is false, so iPadOS must be matched
+            // explicitly rather than by a naive `contains("ios")` check.
+            let mentionsAppleMobileOS = platform.contains("ios") || platform.contains("ipados")
+            guard mentionsAppleMobileOS else { return false }
+            // Reject values that also name a different Apple platform, e.g. a
+            // hypothetical "macOS/iOS bridge" or "iOS, tvOS".
+            let mentionsOtherAppleOS = platform.contains("macos")
+                || platform.contains("tvos")
+                || platform.contains("watchos")
+                || platform.contains("visionos")
+            guard !mentionsOtherAppleOS else { return false }
+        }
+
+        if let deviceType {
+            // iPadOS devices still report deviceType "iPad", so accept both.
+            let isMobileDevice = deviceType.contains("iphone") || deviceType.contains("ipad")
+            guard isMobileDevice else { return false }
+        }
+
+        // Require at least one positive iOS signal so unrelated rows never qualify.
+        return platform != nil || deviceType != nil
+    }
+
+    private static func jsonRows(_ text: String, arrayKeys: Set<String>) throws -> [[String: Any]] {
+        guard let data = text.data(using: .utf8) else {
+            throw ToolboxError.malformedOutput(coreText("无法读取 devicectl 输出", "Unable to read devicectl output", "devicectl の出力を読み込めません"))
+        }
+        let root: Any
+        do {
+            root = try JSONSerialization.jsonObject(with: data)
+        } catch {
+            throw ToolboxError.malformedOutput(coreText("devicectl 没有返回可识别的 JSON", "devicectl did not return valid JSON", "devicectl が有効な JSON を返しませんでした"))
+        }
+        var rows: [[String: Any]] = []
+        func visit(_ value: Any) {
+            if let dictionary = value as? [String: Any] {
+                for (key, nested) in dictionary where arrayKeys.contains(key) {
+                    if let items = nested as? [Any] {
+                        rows.append(contentsOf: items.compactMap { $0 as? [String: Any] })
+                    }
+                }
+                dictionary.values.forEach(visit)
+            } else if let array = value as? [Any] {
+                array.forEach(visit)
+            }
+        }
+        visit(root)
+        return rows
+    }
+
+    private static func string(at paths: [[String]], in object: [String: Any]) -> String? {
+        for path in paths {
+            var current: Any = object
+            var matched = true
+            for key in path {
+                guard let dictionary = current as? [String: Any], let next = dictionary[key] else {
+                    matched = false
+                    break
+                }
+                current = next
+            }
+            guard matched else { continue }
+            if let value = current as? String, !value.isEmpty { return value }
+            if let number = current as? NSNumber { return number.stringValue }
+        }
+        return nil
+    }
+
+    private static func string(in object: [String: Any], keys: [String]) -> String? {
+        for key in keys {
+            if let value = object[key] as? String, !value.isEmpty { return value }
+        }
+        for value in object.values {
+            if let nested = value as? [String: Any], let match = string(in: nested, keys: keys) { return match }
+        }
+        return nil
+    }
+
+    private static func isIOSDeviceIdentifier(_ value: String) -> Bool {
+        !value.isEmpty && value.count <= 255 && !value.contains("\0") && !value.contains("\n") && !value.contains("\r")
+    }
+
+    private static func isIOSBundleIdentifier(_ value: String) -> Bool {
+        value.count <= 255
+            && value.range(of: #"^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$"#, options: .regularExpression) != nil
+    }
+
     public func detectMetalHUDInterferingProcesses(recentAppPaths: [String] = []) async throws -> [MetalHUDProcess] {
         let result = try await runner.run("/bin/ps", arguments: ["-axo", "pid=,ppid=,command="])
         let processes = Self.parseProcessTable(result.outputString)
@@ -278,10 +660,22 @@ public actor GamingService {
     }
 
     public func runningProcesses() async throws -> [SystemProcess] {
-        let result = try await runner.run("/bin/ps", arguments: ["-axo", "pid=,ppid=,command="])
-        return Self.parseProcessTable(result.outputString)
+        let result = try await runner.run("/bin/ps", arguments: ["-axo", "pid=,ppid=,%cpu=,command="])
+        return Self.sortedRunningProcesses(Self.parseProcessTable(result.outputString)
             .filter { $0.pid > 1 && !$0.command.lowercased().contains("macgametoolbox") }
-            .sorted { $0.command.localizedStandardCompare($1.command) == .orderedAscending }
+        )
+    }
+
+    /// The single decision that separates "hosts only" from "hosts + priority"
+    /// for the HoYo launch assistant. It deliberately returns `nil` instead of
+    /// a PID list when the user opted out, so the caller cannot accidentally
+    /// race a renice against the game's anti-cheat handshake.
+    public static func hoYoPriorityPIDs(
+        doesNotRaisePriority: Bool,
+        wineProcesses: [(pid: Int32, command: String)]
+    ) -> [Int32]? {
+        guard !doesNotRaisePriority else { return nil }
+        return wineProcesses.map(\.pid)
     }
 
     public func increasePriority(crossOverOnly: Bool = true) async throws -> Int {
@@ -305,10 +699,34 @@ public actor GamingService {
 
     public static func parseProcessTable(_ text: String) -> [SystemProcess] {
         text.split(separator: "\n").compactMap { line in
-            let fields = line.split(maxSplits: 2, whereSeparator: { $0 == " " || $0 == "\t" })
-            guard fields.count == 3, let pid = Int32(fields[0]), let parentPID = Int32(fields[1]) else { return nil }
-            return SystemProcess(pid: pid, parentPID: parentPID, command: String(fields[2]))
+            let fields = line.split(maxSplits: 3, whereSeparator: { $0 == " " || $0 == "\t" })
+            guard fields.count >= 3, let pid = Int32(fields[0]), let parentPID = Int32(fields[1]) else { return nil }
+            // Older callers still pass `pid=,ppid=,command=`; only treat the
+            // fourth field as CPU percent when it actually parses as a number.
+            guard fields.count == 4 else {
+                return SystemProcess(pid: pid, parentPID: parentPID, command: String(fields[2]))
+            }
+            let cpuUsage = Double(fields[2]).flatMap { $0.isFinite ? $0 : nil } ?? 0
+            return SystemProcess(pid: pid, parentPID: parentPID, command: String(fields[3]), cpuUsage: cpuUsage)
         }
+    }
+
+    /// Highest CPU first, then case-insensitive command, then PID so the order
+    /// stays stable when several processes report identical usage.
+    public static func sortedRunningProcesses(_ processes: [SystemProcess]) -> [SystemProcess] {
+        processes.sorted {
+            if $0.cpuUsage != $1.cpuUsage { return $0.cpuUsage > $1.cpuUsage }
+            let commandOrder = $0.command.localizedStandardCompare($1.command)
+            if commandOrder != .orderedSame { return commandOrder == .orderedAscending }
+            return $0.pid < $1.pid
+        }
+    }
+
+    /// Favorite optimisation matches exact, case-sensitive display names so a
+    /// saved favorite never widens to a look-alike process.
+    public static func matchingFavoriteProcesses(_ processes: [SystemProcess], favoriteNames: [String]) -> [SystemProcess] {
+        let names = Set(favoriteNames)
+        return processes.filter { names.contains($0.displayName) }
     }
 
     public static func matchingProcesses(_ processes: [SystemProcess], crossOverOnly: Bool) -> [SystemProcess] {
@@ -800,7 +1218,7 @@ public actor PerformanceSnapshotService {
         let dateStr = formatter.string(from: now)
 
         var report = """
-        # Mac 游戏工具箱 - 性能诊断快照报告 (Performance Snapshot)
+        # MetalPilot - 性能诊断快照报告 (Performance Snapshot)
         **生成时间**：\(dateStr)
         **目标应用**：\(activeApp ?? "全局环境 (Global Environment)")
 
@@ -847,7 +1265,7 @@ public actor PerformanceSnapshotService {
         report += """
 
         ---
-        *由 Mac 游戏工具箱自动生成。可直接附于社区讨论或技术支持工单。*
+        *由 MetalPilot 自动生成。可直接附于社区讨论或技术支持工单。*
         """
         return report
     }
@@ -983,3 +1401,85 @@ public actor SystemHealthInspector {
 }
 
 
+
+/// Owns imported Metal HUD preset files so a per-app preset stays available even
+/// if the user's original export is moved or deleted.
+///
+/// Deliberately named `ManagedHUDPresetStore` instead of upstream's
+/// `MetalHUDPresetStore`, and it lives alongside the fork's existing core types
+/// instead of adding a new Core source file to the Xcode project.
+public actor ManagedHUDPresetStore {
+    private let directoryURL: URL
+    private let fileManager: FileManager
+
+    public init(directoryURL: URL? = nil, fileManager: FileManager = .default) {
+        self.fileManager = fileManager
+        if let directoryURL {
+            self.directoryURL = directoryURL
+        } else {
+            let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("com.iven.macgametoolbox", isDirectory: true)
+            self.directoryURL = support.appendingPathComponent("MetalHUDPresets", isDirectory: true)
+        }
+    }
+
+    public var managedDirectoryURL: URL { directoryURL }
+
+    /// Validates `sourceURL` as a Metal HUD preset, then copies it into the managed
+    /// directory under a stable, collision-free name.
+    ///
+    /// Validation happens *before* the copy, so an unreadable or malformed file
+    /// never leaves a managed copy behind.
+    public func importPreset(from sourceURL: URL, forApplicationPath applicationPath: String) throws -> ImportedHUDPreset {
+        let source = sourceURL.standardizedFileURL
+        guard fileManager.fileExists(atPath: source.path), !source.hasDirectoryPath else {
+            throw ToolboxError.invalidPath(source.path)
+        }
+        // Parse first: a broken preset must not create a managed copy.
+        _ = try GamingService.metalHUDEnvironment(fromPresetAt: source.path)
+
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let suffix = source.pathExtension.isEmpty ? "plist" : source.pathExtension
+        let destination = uniqueDestination(forApplicationPath: applicationPath, suffix: suffix)
+        try fileManager.copyItem(at: source, to: destination)
+        return ImportedHUDPreset(
+            path: destination.path,
+            displayName: source.deletingPathExtension().lastPathComponent,
+            importedAt: Date()
+        )
+    }
+
+    /// Removes a managed copy previously returned by `importPreset`.
+    ///
+    /// Cleanup is best-effort and never throws: a missing file or a failed delete
+    /// must not crash the caller's removal flow.
+    public func removeManagedPreset(atPath path: String) {
+        guard !path.isEmpty else { return }
+        let target = URL(fileURLWithPath: path).standardizedFileURL
+        // Only ever touch files that actually live in our managed directory.
+        guard target.deletingLastPathComponent().standardizedFileURL.path == directoryURL.standardizedFileURL.path else { return }
+        try? fileManager.removeItem(at: target)
+    }
+
+    private func uniqueDestination(forApplicationPath applicationPath: String, suffix: String) -> URL {
+        let base = stableName(for: applicationPath)
+        var candidate = directoryURL
+            .appendingPathComponent("\(base)-\(UUID().uuidString)")
+            .appendingPathExtension(suffix)
+        var attempt = 0
+        while fileManager.fileExists(atPath: candidate.path), attempt < 8 {
+            candidate = directoryURL
+                .appendingPathComponent("\(base)-\(UUID().uuidString)")
+                .appendingPathExtension(suffix)
+            attempt += 1
+        }
+        return candidate
+    }
+
+    private func stableName(for applicationPath: String) -> String {
+        let candidate = URL(fileURLWithPath: applicationPath).deletingPathExtension().lastPathComponent
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        let result = candidate.unicodeScalars.map { allowed.contains($0) ? String($0) : "-" }.joined()
+        return result.isEmpty ? "MetalHUD" : result
+    }
+}
