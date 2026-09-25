@@ -1287,8 +1287,8 @@ public actor SystemHealthInspector {
         var legacyFound: [String] = []
 
         // 1. Privileged Helper Check (Passive & Read-only, no authorization prompt)
-        let helperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
-        let plistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
+        let helperPath = "/Library/PrivilegedHelperTools/metalpilot.helper"
+        let plistPath = "/Library/LaunchDaemons/metalpilot.helper.plist"
         let helperExists = fileManager.fileExists(atPath: helperPath)
         let plistExists = fileManager.fileExists(atPath: plistPath)
 
@@ -1298,9 +1298,9 @@ public actor SystemHealthInspector {
                 nameEn: "Privileged Helper Service",
                 nameJa: "特権ヘルパーサービス",
                 status: .healthy,
-                detailZh: "辅助服务已安装就绪 (macgametoolbox.helper)。",
-                detailEn: "Helper service is installed and ready (macgametoolbox.helper).",
-                detailJa: "ヘルパーサービスが正常にインストールされています (macgametoolbox.helper)。"
+                detailZh: "辅助服务已安装就绪 (metalpilot.helper)。",
+                detailEn: "Helper service is installed and ready (metalpilot.helper).",
+                detailJa: "ヘルパーサービスが正常にインストールされています (metalpilot.helper)。"
             ))
         } else {
             items.append(HealthCheckItem(
@@ -1315,7 +1315,7 @@ public actor SystemHealthInspector {
         }
 
         // 2. Legacy Helper Residuals Check
-        let legacyNames = ["com.iven.macgametoolbox.helper", "com.iven.macgametoolbox.helper.v9", "com.iven.macgametoolbox.helper.v8", "com.iven.macgametoolbox.helper.v7", "com.iven.macgametoolbox.helper.v6", "com.iven.macgametoolbox.helper.v5", "com.iven.macgametoolbox.helper.v4", "com.iven.macgametoolbox.helper.v3"]
+        let legacyNames = ["macgametoolbox.helper", "com.iven.macgametoolbox.helper", "com.iven.macgametoolbox.helper.v9", "com.iven.macgametoolbox.helper.v8", "com.iven.macgametoolbox.helper.v7", "com.iven.macgametoolbox.helper.v6", "com.iven.macgametoolbox.helper.v5", "com.iven.macgametoolbox.helper.v4", "com.iven.macgametoolbox.helper.v3"]
         for legacy in legacyNames {
             let legacyP = "/Library/LaunchDaemons/\(legacy).plist"
             let legacyT = "/Library/PrivilegedHelperTools/\(legacy)"

@@ -17,7 +17,7 @@ xcodebuild \
   build
 
 APP="$DERIVED_DATA/Build/Products/Release/MetalPilot.app"
-HELPER="$APP/Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper"
+HELPER="$APP/Contents/Library/LaunchServices/MetalPilotPrivilegedHelper"
 
 # Detect persistent code signing identity
 SIGN_IDENTITY="-"
@@ -31,7 +31,7 @@ echo "==> 使用签名证书: $SIGN_IDENTITY"
 xattr -cr "$APP"
 xattr -d com.apple.FinderInfo "$APP" 2>/dev/null || true
 xattr -d 'com.apple.fileprovider.fpfs#P' "$APP" 2>/dev/null || true
-codesign --force --sign "$SIGN_IDENTITY" -i macgametoolbox.helper "$HELPER"
+codesign --force --sign "$SIGN_IDENTITY" -i metalpilot.helper "$HELPER"
 for attempt in 1 2 3 4 5; do
   xattr -d com.apple.FinderInfo "$APP" 2>/dev/null || true
   xattr -d 'com.apple.fileprovider.fpfs#P' "$APP" 2>/dev/null || true

@@ -8,7 +8,7 @@ let package = Package(
     products: [
         .library(name: "MacGameToolboxCore", targets: ["MacGameToolboxCore"]),
         .executable(name: "MacGameToolbox", targets: ["MacGameToolbox"]),
-        .executable(name: "MacGameToolboxPrivilegedHelper", targets: ["MacGameToolboxPrivilegedHelper"])
+        .executable(name: "MetalPilotPrivilegedHelper", targets: ["MetalPilotPrivilegedHelper"])
     ],
     targets: [
         .target(name: "MacGameToolboxCore"),
@@ -19,7 +19,7 @@ let package = Package(
             linkerSettings: [.linkedFramework("ServiceManagement"), .linkedFramework("Security")]
         ),
         .executableTarget(
-            name: "MacGameToolboxPrivilegedHelper",
+            name: "MetalPilotPrivilegedHelper",
             dependencies: ["MacGameToolboxCore"],
             linkerSettings: [.linkedFramework("Security")]
         ),

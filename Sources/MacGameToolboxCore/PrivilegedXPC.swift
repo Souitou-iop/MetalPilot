@@ -32,10 +32,10 @@ public func helperRegistrationDecision(for state: HelperRegistrationState) -> He
 }
 
 public enum PrivilegedHelperConstants {
-    public static let serviceName = "macgametoolbox.helper"
+    public static let serviceName = "metalpilot.helper"
     public static let appBundleIdentifier = "com.iven.macgametoolbox"
-    public static let installedHelperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
-    public static let installedPlistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
+    public static let installedHelperPath = "/Library/PrivilegedHelperTools/metalpilot.helper"
+    public static let installedPlistPath = "/Library/LaunchDaemons/metalpilot.helper.plist"
     public static let idleTimeoutSeconds: TimeInterval = 15.0
 
     public static func isPlistCurrent(_ plist: [String: Any]) -> Bool {

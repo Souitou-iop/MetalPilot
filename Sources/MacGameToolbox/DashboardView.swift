@@ -37,6 +37,24 @@ struct DashboardView: View {
                 Button(model.cacheConfirmationStage == 1 ? tr("继续", "Continue") : tr("确认删除", "Delete"), role: model.configuration.excludesSensitiveCacheFiles ? nil : .destructive) { model.confirmCacheCleaning() }
             }
         } message: { Text(cacheAlertMessage) }
+        .alert(tr("检测到旧版辅助服务", "Legacy Helper Detected", "旧ヘルパーサービスを検出"), isPresented: $model.legacyHelperMigrationPending) {
+            Button(tr("立即迁移", "Migrate Now", "今すぐ移行")) { model.migrateLegacyHelper() }
+            Button(tr("保留旧服务（双软件共存）", "Keep Legacy Service (Side-by-Side)", "旧サービスを残す（共存）")) { model.keepLegacyHelperCoexistence() }
+            Button(tr("稍后", "Later", "後で"), role: .cancel) {}
+        } message: {
+            Text(tr("系统后台仍注册着旧版辅助服务 macgametoolbox.helper。立即迁移将卸载并清理旧服务（需一次管理员授权），后台列表仅保留 metalpilot.helper；选择保留则新旧服务共存、互不影响，适合同时保留新旧两个应用的用户，之后可在系统页随时迁移。",
+                    "The legacy helper macgametoolbox.helper is still registered. Migrating now uninstalls it (one admin authorization) and keeps only metalpilot.helper; choosing Keep runs both services side by side for users who retain the old app, and migration stays available on the System page.",
+                    "旧ヘルパー macgametoolbox.helper が登録されています。今すぐ移行すると旧サービスをアンインストールし（管理者認証一度）、metalpilot.helper のみが残ります。残すを選ぶと新旧両方が共存し、旧アプリ併用ユーザーに適しています。移行はシステムページからいつでも実行できます。"))
+        }
+        .alert(tr("当前为双软件共存模式", "Side-by-Side Mode Active", "共存モードが有効です"), isPresented: $model.showingCoexistenceRepairChoice) {
+            Button(tr("仅重新注册（保留旧服务）", "Re-register Only (Keep Legacy)", "再登録のみ（旧サービスを残す）")) { model.cleanAllLegacyHelpersAndRepair() }
+            Button(tr("迁移并清理旧服务", "Migrate & Clean Legacy", "移行して旧サービスを削除")) { model.migrateLegacyHelper() }
+            Button(tr("取消", "Cancel", "キャンセル"), role: .cancel) {}
+        } message: {
+            Text(tr("请选择如何处理旧版辅助服务 macgametoolbox.helper。迁移后系统后台仅保留 metalpilot.helper。",
+                    "Choose how to handle the legacy macgametoolbox.helper service. After migration only metalpilot.helper remains in the background list.",
+                    "旧ヘルパー macgametoolbox.helper の扱いを選択してください。移行後はバックグラウンドに metalpilot.helper のみが残ります。"))
+        }
         .environment(\.colorScheme, colorScheme)
         .environment(\.dashboardColorScheme, colorScheme)
         .environment(\.nativeGlassEnabled, false)

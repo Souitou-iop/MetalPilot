@@ -996,10 +996,10 @@ actor MockRunner: CommandRunning {
 
 @Test func privilegedHelperConstantsValidateCurrentLaunchDaemonPlist() {
     let validPlist: [String: Any] = [
-        "Label": "macgametoolbox.helper",
-        "ProgramArguments": ["/Library/PrivilegedHelperTools/macgametoolbox.helper"],
+        "Label": "metalpilot.helper",
+        "ProgramArguments": ["/Library/PrivilegedHelperTools/metalpilot.helper"],
         "AssociatedBundleIdentifiers": ["com.iven.macgametoolbox"],
-        "MachServices": ["macgametoolbox.helper": true]
+        "MachServices": ["metalpilot.helper": true]
     ]
     #expect(PrivilegedHelperConstants.isPlistCurrent(validPlist) == true)
 
@@ -1027,10 +1027,10 @@ actor MockRunner: CommandRunning {
 @Test func bundledLaunchDaemonPlistIsOnDemandAndOmitsRunAtLoad() throws {
     let sourceFileURL = URL(fileURLWithPath: #filePath)
     let repoRoot = sourceFileURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-    let plistURL = repoRoot.appendingPathComponent("Config/com.iven.macgametoolbox.helper.plist")
+    let plistURL = repoRoot.appendingPathComponent("Config/metalpilot.helper.plist")
     let data = try Data(contentsOf: plistURL)
     guard let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
-        Issue.record("Failed to parse Config/com.iven.macgametoolbox.helper.plist")
+        Issue.record("Failed to parse Config/metalpilot.helper.plist")
         return
     }
 
@@ -1038,6 +1038,17 @@ actor MockRunner: CommandRunning {
     #expect(plist["Label"] as? String == PrivilegedHelperConstants.serviceName)
     #expect(plist["ProgramArguments"] as? [String] == [PrivilegedHelperConstants.installedHelperPath])
     #expect(PrivilegedHelperConstants.isPlistCurrent(plist) == true)
+}
+
+@Test func appConfigurationDefaultsAndPersistsLegacyHelperCoexistence() throws {
+    // Configs written before the coexistence choice existed must decode safely.
+    let empty = try JSONDecoder().decode(AppConfiguration.self, from: Data("{}".utf8))
+    #expect(empty.legacyHelperCoexistence == false)
+
+    var enabled = AppConfiguration()
+    enabled.legacyHelperCoexistence = true
+    let data = try JSONEncoder().encode(enabled)
+    #expect(try JSONDecoder().decode(AppConfiguration.self, from: data).legacyHelperCoexistence == true)
 }
 
 

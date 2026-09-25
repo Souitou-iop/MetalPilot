@@ -80,7 +80,8 @@ public struct SystemSectionView: View {
 
     private var systemHealthBox: some View {
         let isHealthy = model.healthReport?.allHealthy ?? false
-        let hasLegacy = !(model.healthReport?.legacyHelpersFound.isEmpty ?? true)
+        let coexistenceEnabled = model.configuration.legacyHelperCoexistence
+        let hasLegacy = !(model.healthReport?.legacyHelpersFound.isEmpty ?? true) && !coexistenceEnabled
         let hasWarnings = (model.healthReport?.items.contains { $0.status == .warning } ?? false)
 
         let badgeStyle: LiveStatusBadge.StatusType = isHealthy ? .active : (hasLegacy ? .warning : (hasWarnings ? .standby : .idle))
@@ -145,24 +146,43 @@ public struct SystemSectionView: View {
 		                        }
 	                    }
 
-                    // Legacy Helper Warning Banner
+                    // Legacy Helper Banner (warning, or neutral note in side-by-side mode)
                     if !report.legacyHelpersFound.isEmpty {
-                        HStack(spacing: 10) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(tr("检测到历史旧版本辅助服务残留", "Legacy Helper Residuals Detected", "過去バージョンのヘルパー残存ファイルを検出"))
-                                    .font(.caption.bold())
-                                Text(tr("发现历史服务：\(report.legacyHelpersFound.joined(separator: ", "))。建议点击下方一键清理。",
-                                        "Found: \(report.legacyHelpersFound.joined(separator: ", ")). Click cleanup below.",
-                                        "検出されたサービス：\(report.legacyHelpersFound.joined(separator: ", "))。下のボタンでクリーンアップを推奨します。"))
-                                    .font(.caption2)
+                        if model.configuration.legacyHelperCoexistence {
+                            HStack(spacing: 10) {
+                                Image(systemName: "info.circle.fill")
                                     .foregroundStyle(.secondary)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(tr("旧版服务已按你的选择保留（共存模式）", "Legacy Service Kept by Your Choice (Side-by-Side)", "旧サービスは共存モードで保持されています"))
+                                        .font(.caption.bold())
+                                    Text(tr("已保留：\(report.legacyHelpersFound.joined(separator: ", "))。新旧服务互不影响；如需迁移到 metalpilot.helper，点击下方按钮后选择迁移。",
+                                            "Kept: \(report.legacyHelpersFound.joined(separator: ", ")). Both services run independently; migrate to metalpilot.helper anytime via the button below.",
+                                            "保持中：\(report.legacyHelpersFound.joined(separator: ", "))。新舊サービスは独立して動作します。移行は下のボタンからいつでも可能です。"))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
                             }
-                            Spacer()
+                            .padding(8)
+                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                        } else {
+                            HStack(spacing: 10) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(tr("检测到历史旧版本辅助服务残留", "Legacy Helper Residuals Detected", "過去バージョンのヘルパー残存ファイルを検出"))
+                                        .font(.caption.bold())
+                                    Text(tr("发现历史服务：\(report.legacyHelpersFound.joined(separator: ", "))。建议点击下方一键清理。",
+                                            "Found: \(report.legacyHelpersFound.joined(separator: ", ")). Click cleanup below.",
+                                            "検出されたサービス：\(report.legacyHelpersFound.joined(separator: ", "))。下のボタンでクリーンアップを推奨します。"))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding(8)
+                            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                         }
-                        .padding(8)
-                        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                     }
                 } else {
                     HStack(spacing: 8) {
@@ -179,9 +199,9 @@ public struct SystemSectionView: View {
 
                 // Action Controls
                 HStack(spacing: 12) {
-	                    let helperInstalled = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/macgametoolbox.helper")
+	                    let helperInstalled = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/metalpilot.helper")
 	                    Button {
-	                        model.cleanAllLegacyHelpersAndRepair()
+	                        model.requestServiceRepair()
 	                    } label: {
 	                        Label(
 	                            helperInstalled ? tr("一键重新注册与修复服务", "Re-register & Repair Service", "サービスの再登録と修復") : tr("手动安装特权辅助服务", "Install Privileged Helper", "特権ヘルパーを手動インストール"),

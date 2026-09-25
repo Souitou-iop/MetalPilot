@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/架构-Apple%20Silicon%20ARM64-brightgreen.svg" alt="Apple Silicon ARM64" />
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
   <img src="https://img.shields.io/badge/许可证-GPL--3.0-blue.svg" alt="GPL-3.0" />
-  <img src="https://img.shields.io/badge/版本-v4.2.0-orange.svg" alt="v4.2.0" />
+  <img src="https://img.shields.io/badge/版本-v4.3.0-orange.svg" alt="v4.3.0" />
 </p>
 
 MetalPilot 将游戏启动、性能增强、Metal HUD、存档管理和系统状态整合到一个轻量的 macOS 原生应用中。它不试图替你接管游戏，而是让你在进入游戏前完成准备、运行中掌握状态、退出后保留可诊断的信息。
@@ -66,11 +66,11 @@ MetalPilot 将游戏启动、性能增强、Metal HUD、存档管理和系统状
 ## 🖥️ 界面预览
 
 <p align="center">
-  <img src="docs/概览_cn.png" alt="MetalPilot 概览与状态看板" width="49%" />
-  <img src="docs/HUD_cn.png" alt="MetalPilot Metal HUD 调优" width="49%" />
+  <img src="docs/screenshots/概览_cn.png" alt="MetalPilot 概览与状态看板" width="49%" />
+  <img src="docs/screenshots/HUD_cn.png" alt="MetalPilot Metal HUD 调优" width="49%" />
 </p>
 <p align="center">
-  <img src="docs/菜单栏_cn.png" alt="MetalPilot 菜单栏控制面板" width="42%" />
+  <img src="docs/screenshots/菜单栏_cn.png" alt="MetalPilot 菜单栏控制面板" width="42%" />
 </p>
 
 ---
@@ -122,7 +122,7 @@ MetalPilot 将游戏启动、性能增强、Metal HUD、存档管理和系统状
 
 ```bash
 git clone https://github.com/Souitou-iop/MetalPilot.git
-cd mac-gaming-toolbox
+cd MetalPilot
 ```
 
 ### 使用 Xcode 构建

@@ -21,8 +21,8 @@
 		A1000000000000000000000C /* DiskManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000004 /* DiskManagerView.swift */; };
 		A1000000000000000000000D /* InformationViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000005 /* InformationViews.swift */; };
 		A1000000000000000000000E /* PrivilegedHelperClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000006 /* PrivilegedHelperClient.swift */; };
-		A1000000000000000000000F /* MacGameToolboxPrivilegedHelper in Embed Privileged Helper */ = {isa = PBXBuildFile; fileRef = F40000000000000000000002 /* MacGameToolboxPrivilegedHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		A10000000000000000000010 /* com.iven.macgametoolbox.helper.plist in Embed LaunchDaemon Plist */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* com.iven.macgametoolbox.helper.plist */; };
+		A1000000000000000000000F /* MetalPilotPrivilegedHelper in Embed Privileged Helper */ = {isa = PBXBuildFile; fileRef = F40000000000000000000002 /* MetalPilotPrivilegedHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		A10000000000000000000010 /* metalpilot.helper.plist in Embed LaunchDaemon Plist */ = {isa = PBXBuildFile; fileRef = F30000000000000000000002 /* metalpilot.helper.plist */; };
 		A10000000000000000000011 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F50000000000000000000001 /* ServiceManagement.framework */; };
 		A10000000000000000000012 /* DiagnosticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000007 /* DiagnosticsService.swift */; };
 		A10000000000000000000014 /* DiagnosticFileLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000008 /* DiagnosticFileLogger.swift */; };
@@ -73,7 +73,7 @@
 			containerPortal = P10000000000000000000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = T20000000000000000000001;
-			remoteInfo = MacGameToolboxPrivilegedHelper;
+			remoteInfo = MetalPilotPrivilegedHelper;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -84,7 +84,7 @@
 			dstPath = Contents/Library/LaunchServices;
 			dstSubfolderSpec = 1;
 			files = (
-				A1000000000000000000000F /* MacGameToolboxPrivilegedHelper in Embed Privileged Helper */,
+				A1000000000000000000000F /* MetalPilotPrivilegedHelper in Embed Privileged Helper */,
 			);
 			name = "Embed Privileged Helper";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -95,7 +95,7 @@
 			dstPath = Contents/Library/LaunchDaemons;
 			dstSubfolderSpec = 1;
 			files = (
-				A10000000000000000000010 /* com.iven.macgametoolbox.helper.plist in Embed LaunchDaemon Plist */,
+				A10000000000000000000010 /* metalpilot.helper.plist in Embed LaunchDaemon Plist */,
 			);
 			name = "Embed LaunchDaemon Plist";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -131,10 +131,10 @@
 		F20000000000000000000017 /* CommandCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandCenterView.swift; sourceTree = "<group>"; };
 		F20000000000000000000018 /* AboutSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSectionView.swift; sourceTree = "<group>"; };
 		F30000000000000000000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		F30000000000000000000002 /* com.iven.macgametoolbox.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.iven.macgametoolbox.helper.plist; sourceTree = "<group>"; };
+		F30000000000000000000002 /* metalpilot.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = metalpilot.helper.plist; sourceTree = "<group>"; };
 		F30000000000000000000003 /* App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "App-Info.plist"; sourceTree = "<group>"; };
 		F40000000000000000000001 /* MetalPilot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetalPilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F40000000000000000000002 /* MacGameToolboxPrivilegedHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MacGameToolboxPrivilegedHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		F40000000000000000000002 /* MetalPilotPrivilegedHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MetalPilotPrivilegedHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 		F50000000000000000000001 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		F50000000000000000000002 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		F60000000000000000000001 /* Metal Pilot.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer; name = "Metal Pilot.icon"; path = "icon/Metal Pilot.icon"; sourceTree = SOURCE_ROOT; };
@@ -191,7 +191,7 @@
 				G10000000000000000000002 /* MacGameToolboxCore */,
 				F60000000000000000000001 /* Metal Pilot.icon */,
 				G10000000000000000000003 /* MacGameToolbox */,
-				G10000000000000000000004 /* MacGameToolboxPrivilegedHelper */,
+				G10000000000000000000004 /* MetalPilotPrivilegedHelper */,
 				G10000000000000000000005 /* Config */,
 				G10000000000000000000006 /* Products */,
 				3C64F7052FE59F910027447F /* Recovered References */,
@@ -256,20 +256,20 @@
 			path = Sources/MacGameToolbox;
 			sourceTree = "<group>";
 		};
-		G10000000000000000000004 /* MacGameToolboxPrivilegedHelper */ = {
+		G10000000000000000000004 /* MetalPilotPrivilegedHelper */ = {
 			isa = PBXGroup;
 			children = (
 				F30000000000000000000001 /* main.swift */,
 			);
-			name = MacGameToolboxPrivilegedHelper;
-			path = Sources/MacGameToolboxPrivilegedHelper;
+			name = MetalPilotPrivilegedHelper;
+			path = Sources/MetalPilotPrivilegedHelper;
 			sourceTree = "<group>";
 		};
 		G10000000000000000000005 /* Config */ = {
 			isa = PBXGroup;
 			children = (
 				F30000000000000000000003 /* App-Info.plist */,
-				F30000000000000000000002 /* com.iven.macgametoolbox.helper.plist */,
+				F30000000000000000000002 /* metalpilot.helper.plist */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -278,7 +278,7 @@
 			isa = PBXGroup;
 			children = (
 				F40000000000000000000001 /* MetalPilot.app */,
-				F40000000000000000000002 /* MacGameToolboxPrivilegedHelper */,
+				F40000000000000000000002 /* MetalPilotPrivilegedHelper */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -306,9 +306,9 @@
 			productReference = F40000000000000000000001 /* MetalPilot.app */;
 			productType = "com.apple.product-type.application";
 		};
-		T20000000000000000000001 /* MacGameToolboxPrivilegedHelper */ = {
+		T20000000000000000000001 /* MetalPilotPrivilegedHelper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = L30000000000000000000001 /* Build configuration list for PBXNativeTarget "MacGameToolboxPrivilegedHelper" */;
+			buildConfigurationList = L30000000000000000000001 /* Build configuration list for PBXNativeTarget "MetalPilotPrivilegedHelper" */;
 			buildPhases = (
 				S10000000000000000000002 /* Sources */,
 				D10000000000000000000002 /* Frameworks */,
@@ -317,9 +317,9 @@
 			);
 			dependencies = (
 			);
-			name = MacGameToolboxPrivilegedHelper;
-			productName = MacGameToolboxPrivilegedHelper;
-			productReference = F40000000000000000000002 /* MacGameToolboxPrivilegedHelper */;
+			name = MetalPilotPrivilegedHelper;
+			productName = MetalPilotPrivilegedHelper;
+			productReference = F40000000000000000000002 /* MetalPilotPrivilegedHelper */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -355,7 +355,7 @@
 			projectRoot = "";
 			targets = (
 				T10000000000000000000001 /* MetalPilot */,
-				T20000000000000000000001 /* MacGameToolboxPrivilegedHelper */,
+				T20000000000000000000001 /* MetalPilotPrivilegedHelper */,
 			);
 		};
 /* End PBXProject section */
@@ -443,7 +443,7 @@
 /* Begin PBXTargetDependency section */
 		T30000000000000000000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = T20000000000000000000001 /* MacGameToolboxPrivilegedHelper */;
+			target = T20000000000000000000001 /* MetalPilotPrivilegedHelper */;
 			targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -477,13 +477,13 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 4.2.0;
+					CURRENT_PROJECT_VERSION = 4.3.0;
 					DEVELOPMENT_TEAM = HP5WBFL9G3;
 					ENABLE_DEBUG_DYLIB = NO;
 					GENERATE_INFOPLIST_FILE = NO;
 					INFOPLIST_FILE = "Config/App-Info.plist";
 					MACOSX_DEPLOYMENT_TARGET = 26.0;
-					MARKETING_VERSION = 4.2.0;
+					MARKETING_VERSION = 4.3.0;
 					PRODUCT_BUNDLE_IDENTIFIER = com.iven.macgametoolbox;
 					PRODUCT_NAME = MetalPilot;
 					PROVISIONING_PROFILE_SPECIFIER = "";
@@ -500,12 +500,12 @@
 					"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 					CODE_SIGN_STYLE = Automatic;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 4.2.0;
+					CURRENT_PROJECT_VERSION = 4.3.0;
 					DEVELOPMENT_TEAM = HP5WBFL9G3;
 					GENERATE_INFOPLIST_FILE = NO;
 					INFOPLIST_FILE = "Config/App-Info.plist";
 					MACOSX_DEPLOYMENT_TARGET = 26.0;
-					MARKETING_VERSION = 4.2.0;
+					MARKETING_VERSION = 4.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iven.macgametoolbox;
 				PRODUCT_NAME = MetalPilot;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -524,8 +524,8 @@
 				DEVELOPMENT_TEAM = HP5WBFL9G3;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = macgametoolbox.helper;
-				PRODUCT_NAME = MacGameToolboxPrivilegedHelper;
+				PRODUCT_BUNDLE_IDENTIFIER = metalpilot.helper;
+				PRODUCT_NAME = MetalPilotPrivilegedHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -542,8 +542,8 @@
 				DEVELOPMENT_TEAM = HP5WBFL9G3;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = macgametoolbox.helper;
-				PRODUCT_NAME = MacGameToolboxPrivilegedHelper;
+				PRODUCT_BUNDLE_IDENTIFIER = metalpilot.helper;
+				PRODUCT_NAME = MetalPilotPrivilegedHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_COMPILATION_MODE = singlefile;
@@ -573,7 +573,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		L30000000000000000000001 /* Build configuration list for PBXNativeTarget "MacGameToolboxPrivilegedHelper" */ = {
+		L30000000000000000000001 /* Build configuration list for PBXNativeTarget "MetalPilotPrivilegedHelper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				X30000000000000000000001 /* Debug */,

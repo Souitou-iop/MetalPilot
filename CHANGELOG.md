@@ -4,6 +4,26 @@ All notable changes to **MetalPilot** will be documented in this file.
 
 ---
 
+## [v4.3.0] - 2026-09-25
+
+### 🛠️ 特权辅助服务迁移至新品牌标识 (Privileged Helper Identity Migration)
+- **辅助服务标识迁移为 `metalpilot.helper`**：LaunchDaemon Label、MachService 名称、安装路径（`/Library/PrivilegedHelperTools/metalpilot.helper`）与 Helper Bundle ID 统一更新，系统设置「登录项与扩展 > 后台活动」中显示为 `metalpilot.helper`，与 MetalPilot 品牌保持一致。
+- **Helper 可执行文件更名**：`MacGameToolboxPrivilegedHelper` 更名为 `MetalPilotPrivilegedHelper`，SwiftPM Target、Xcode 工程、构建与签名脚本（`codesign -i metalpilot.helper`）同步更新。
+- **主 App 技术身份保持稳定**：App Bundle ID（`com.iven.macgametoolbox`）、持久签名证书（`MacGameToolbox Dev`）与后台项 `AssociatedBundleIdentifiers` 关联保持不变，TCC 权限与后台活动 App 图标显示不受影响。
+
+### ⚖️ 迁移完全可选，支持双软件共存 (Optional Migration & Side-by-Side Coexistence)
+- **启动时自动检测旧服务**：发现旧 `macgametoolbox.helper` 守护进程或残留文件而新版未安装时，弹窗提供三种选择——立即迁移（卸载并清理旧服务，后台仅保留 `metalpilot.helper`，需一次管理员授权）、保留旧服务（双软件共存模式，适合同时保留新旧两个应用的用户）、稍后（下次启动再询问）。
+- **共存模式持久化**：选择保留后写入配置（`legacyHelperCoexistence`，旧配置文件自动兼容默认关闭），此后所有安装/修复路径自动附加 `--preserve-legacy`，Helper 安装器不再触碰旧服务文件与守护进程，也不再重复弹窗。
+- **共存模式可随时退出**：系统页修复按钮在共存模式下会先询问「仅重新注册（保留旧服务）」或「迁移并清理旧服务」；健康检测横幅同步替换为中性说明，不再显示橙色清理警告。
+- **默认升级路径不变**：未选择共存的用户首次迁移仍会自动清理历史残留。
+
+### 📝 文档与发布资料对齐 (Documentation Alignment)
+- **三语 README 对齐**：英文与日文 README 重写为与中文版一致的产品叙事结构（Logo 头图、主要能力、界面预览、为什么是 MetalPilot、功能概览、系统要求、权限边界、项目状态），移除过时的 fork 增强清单与上游对比表。
+- **修复截图断链**：三份 README 的截图路径由 `docs/` 修正为 `docs/screenshots/`，概览、Metal HUD 与菜单栏三组三语截图全部可正常显示。
+- **版本徽章与构建说明修正**：版本徽章统一为 v4.3.0，clone 后目录说明修正为 `cd MetalPilot`。
+
+---
+
 ## [v4.2.0] - 2026-09-24
 
 ### 🖼️ 三语界面演示与菜单栏 Popover 修复 (Trilingual UI Showcase & Popover Layout Fix)

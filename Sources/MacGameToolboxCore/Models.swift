@@ -751,6 +751,9 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
     /// When true the HoYo launch assistant still rewrites and restores hosts but
     /// leaves Wine process priority untouched.
     public var doesNotRaiseHoYoPriority = false
+    /// When true the app keeps the legacy `macgametoolbox.helper` daemon for
+    /// side-by-side installs and never deletes it during helper installation.
+    public var legacyHelperCoexistence = false
 
     public init() {}
 
@@ -759,7 +762,7 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         case automaticallyRestoreMountsOnLaunch, restorableDiskMounts, hostnameBackup
         case recentMetalHUDApps, hoYoWaitSeconds, excludesSensitiveCacheFiles, metalHUDOptions, navigationLayoutMode
         case perAppHUDProfiles, savedGameBackupsDirectory, languagePreference, scalingSettings
-        case favoriteProcessNames, doesNotRaiseHoYoPriority
+        case favoriteProcessNames, doesNotRaiseHoYoPriority, legacyHelperCoexistence
     }
 
     public init(from decoder: Decoder) throws {
@@ -783,6 +786,7 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         scalingSettings = try container.decodeIfPresent(ScalingSettings.self, forKey: .scalingSettings) ?? ScalingSettings()
         favoriteProcessNames = try container.decodeIfPresent([String].self, forKey: .favoriteProcessNames) ?? []
         doesNotRaiseHoYoPriority = try container.decodeIfPresent(Bool.self, forKey: .doesNotRaiseHoYoPriority) ?? false
+        legacyHelperCoexistence = try container.decodeIfPresent(Bool.self, forKey: .legacyHelperCoexistence) ?? false
     }
 }
 

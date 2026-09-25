@@ -12,6 +12,7 @@ private let installedPlistPath = PrivilegedHelperConstants.installedPlistPath
 private let requirementPath = "\(PrivilegedHelperConstants.installedHelperPath).requirement"
 private enum LegacyHelperConfig {
     static let legacyServiceNames = [
+        "macgametoolbox.helper",
         "com.iven.macgametoolbox.helper",
         "com.iven.macgametoolbox.helper.v9",
         "com.iven.macgametoolbox.helper.v8",
@@ -212,12 +213,12 @@ func containingAppURL() -> URL? {
     return url.standardizedFileURL
 }
 
-func installPersistentHelper(for appPath: String) throws {
+func installPersistentHelper(for appPath: String, preserveLegacy: Bool = false) throws {
     let appURL = URL(fileURLWithPath: appPath).resolvingSymlinksInPath().standardizedFileURL
     guard appURL.pathExtension == "app",
           containingAppURL()?.resolvingSymlinksInPath().standardizedFileURL == appURL,
           selfExecutableURL()?.resolvingSymlinksInPath().standardizedFileURL == appURL
-            .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
+            .appendingPathComponent("Contents/Library/LaunchServices/MetalPilotPrivilegedHelper")
             .resolvingSymlinksInPath().standardizedFileURL else { throw HelperError.invalidPath }
     var appCode: SecStaticCode?
     guard SecStaticCodeCreateWithPath(appURL as CFURL, [], &appCode) == errSecSuccess, let appCode,
@@ -238,11 +239,13 @@ func installPersistentHelper(for appPath: String) throws {
 
     let fileManager = FileManager.default
     try fileManager.createDirectory(atPath: "/Library/PrivilegedHelperTools", withIntermediateDirectories: true)
-    for legacyName in LegacyHelperConfig.legacyServiceNames {
-        _ = try? run("/bin/launchctl", ["bootout", "system/\(legacyName)"])
-    }
-    for path in LegacyHelperConfig.allLegacyFilePaths() where fileManager.fileExists(atPath: path) {
-        try? fileManager.removeItem(atPath: path)
+    if !preserveLegacy {
+        for legacyName in LegacyHelperConfig.legacyServiceNames {
+            _ = try? run("/bin/launchctl", ["bootout", "system/\(legacyName)"])
+        }
+        for path in LegacyHelperConfig.allLegacyFilePaths() where fileManager.fileExists(atPath: path) {
+            try? fileManager.removeItem(atPath: path)
+        }
     }
     _ = try? run("/bin/launchctl", ["bootout", "system/\(serviceName)"])
 
@@ -314,9 +317,9 @@ func removeVisibleContents(_ path: String) throws {
 }
 
 guard geteuid() == 0 else { fatalError(HelperError.notRoot.localizedDescription) }
-if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--install" {
+if CommandLine.arguments.count >= 3, CommandLine.arguments[1] == "--install" {
     do {
-        try installPersistentHelper(for: CommandLine.arguments[2])
+        try installPersistentHelper(for: CommandLine.arguments[2], preserveLegacy: CommandLine.arguments.contains("--preserve-legacy"))
         exit(EXIT_SUCCESS)
     } catch {
         fputs("\(error.localizedDescription)\n", stderr)
@@ -351,9 +354,9 @@ final class HelperDaemon: @unchecked Sendable {
 }
 
 guard geteuid() == 0 else { fatalError(HelperError.notRoot.localizedDescription) }
-if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--install" {
+if CommandLine.arguments.count >= 3, CommandLine.arguments[1] == "--install" {
     do {
-        try installPersistentHelper(for: CommandLine.arguments[2])
+        try installPersistentHelper(for: CommandLine.arguments[2], preserveLegacy: CommandLine.arguments.contains("--preserve-legacy"))
         exit(EXIT_SUCCESS)
     } catch {
         fputs("\(error.localizedDescription)\n", stderr)

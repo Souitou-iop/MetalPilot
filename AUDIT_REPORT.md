@@ -25,7 +25,7 @@
 项目严格遵循职责单一与最小特权原则，划分为三大独立物理 Target：
 - **`MacGameToolboxCore`（核心引擎与业务库，模块名为保留的内部技术标识）**：负责渲染管线、运动估计、数据持久化、进程探测与 XPC 客户端通信。
 - **`MacGameToolbox`（主 App 交互层，模块名为保留的内部技术标识）**：100% 纯原生 SwiftUI + AppKit 呈现，运行于普通用户权限，不执行任何高危提权操作。
-- **`MacGameToolboxPrivilegedHelper`（root 特权辅助守护进程）**：独立 LaunchDaemon，仅响应严格白名单化的 XPC 请求（修改 hosts、renice 调整优先级、清理系统缓存等）。
+- **`MetalPilotPrivilegedHelper`（root 特权辅助守护进程）**：独立 LaunchDaemon（标识 `metalpilot.helper`），仅响应严格白名单化的 XPC 请求（修改 hosts、renice 调整优先级、清理系统缓存等）。
 
 ### 1.2 XPC 通信与安全校验审查
 - **代码签名与代码需求验证**：通过 `SecCodeCopySelf` 及 `SecRequirementCreateWithString` 在 XPC 监听握手阶段严格校验客户端的 Designated Requirement 与 Team Identifier，彻底杜绝恶意第三方 App 仿冒主 App 调用特权接口进行提权攻击。

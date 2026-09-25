@@ -11,6 +11,7 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
     static let installedHelperPath = PrivilegedHelperConstants.installedHelperPath
     static let installedPlistPath = PrivilegedHelperConstants.installedPlistPath
     private let coordinator = PrivilegedHelperCoordinator()
+    private(set) var preserveLegacyHelper = false
 
     public init() {}
 
@@ -20,12 +21,18 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
         return "persistent helper: \(installed ? "installed" : "not installed"), \(signing)"
     }
 
-    public func installOrReinstallHelper() async throws {
-        try await coordinator.install()
+    /// Records the user's side-by-side choice so every automatic install path
+    /// (first privileged use, repairs) keeps the legacy helper untouched.
+    public func setLegacyCoexistence(_ enabled: Bool) {
+        preserveLegacyHelper = enabled
+    }
+
+    public func installOrReinstallHelper(preserveLegacy: Bool = false) async throws {
+        try await coordinator.install(preserveLegacy: preserveLegacy)
     }
 
     public func perform(_ operation: PrivilegedOperation) async throws {
-        try await coordinator.perform(Self.request(for: operation))
+        try await coordinator.perform(Self.request(for: operation), preserveLegacy: preserveLegacyHelper)
     }
 
     static func request(for operation: PrivilegedOperation) throws -> PrivilegedRequest {
@@ -64,7 +71,7 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
 
     static var hasCurrentRegistration: Bool {
         let bundledHelperPath = Bundle.main.bundleURL
-            .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
+            .appendingPathComponent("Contents/Library/LaunchServices/MetalPilotPrivilegedHelper")
             .path
         guard FileManager.default.fileExists(atPath: installedHelperPath),
               FileManager.default.contentsEqual(atPath: installedHelperPath, andPath: bundledHelperPath),
@@ -80,9 +87,9 @@ private actor PrivilegedHelperCoordinator {
     private let logger = Logger(subsystem: "com.iven.macgametoolbox", category: "PrivilegedClient")
     private var installedThisSession = false
 
-    func perform(_ request: PrivilegedRequest) async throws {
+    func perform(_ request: PrivilegedRequest, preserveLegacy: Bool = false) async throws {
         if !PrivilegedHelperClient.hasCurrentRegistration {
-            try await install()
+            try await install(preserveLegacy: preserveLegacy)
         }
         let data = try JSONEncoder().encode(request)
         logger.info("Sending persistent helper request: \(String(describing: request), privacy: .public)")
@@ -92,22 +99,23 @@ private actor PrivilegedHelperCoordinator {
             try await sendWithStartupRetries(data)
         } catch let error as ToolboxError {
             guard case .helperUnavailable = error, !installedThisSession else { throw error }
-            try await install()
+            try await install(preserveLegacy: preserveLegacy)
             try await sendWithStartupRetries(data)
         }
         DiagnosticFileLogger.write("Persistent helper request completed")
     }
 
-    func install() async throws {
+    func install(preserveLegacy: Bool = false) async throws {
         let helperURL = Bundle.main.bundleURL
-            .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
+            .appendingPathComponent("Contents/Library/LaunchServices/MetalPilotPrivilegedHelper")
         guard FileManager.default.isExecutableFile(atPath: helperURL.path) else {
             throw ToolboxError.helperUnavailable("The app bundle does not contain the privileged helper")
         }
-        DiagnosticFileLogger.write("Requesting one-time persistent helper installation")
+        DiagnosticFileLogger.write("Requesting one-time persistent helper installation\(preserveLegacy ? " (legacy helper preserved)" : "")")
+        let preserveArgument = preserveLegacy ? " --preserve-legacy" : ""
         let script = """
         on run argv
-            do shell script quoted form of (item 1 of argv) & " --install " & quoted form of (item 2 of argv) with administrator privileges
+            do shell script quoted form of (item 1 of argv) & " --install " & quoted form of (item 2 of argv) & "\(preserveArgument)" with administrator privileges
         end run
         """
         let result: (Int32, String) = try await Task.detached(priority: .userInitiated) {

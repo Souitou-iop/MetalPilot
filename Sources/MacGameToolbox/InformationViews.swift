@@ -6,6 +6,14 @@ struct ChangelogView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("4.3.0") {
+                    Text(tr("【辅助服务品牌迁移】特权辅助服务标识由 macgametoolbox.helper 迁移为 metalpilot.helper，系统后台活动与登录项显示新名称，旧服务与历史残留将自动清理",
+                            "Privileged helper identity migrated from macgametoolbox.helper to metalpilot.helper; legacy daemons are cleaned up automatically",
+                            "【ヘルパー移行】特権ヘルパー識別子を macgametoolbox.helper から metalpilot.helper へ移行し、旧デーモンを自動クリーンアップ"))
+                    Text(tr("【迁移完全可选】检测到旧版辅助服务时可选择立即迁移或保留共存，共存模式下新旧两个应用互不影响，可随时在系统页迁移",
+                            "Helper migration is now fully optional: migrate or keep the legacy service for side-by-side use, switchable anytime from the System page",
+                            "【移行完全任意】旧ヘルパー検出時に移行または共存を選択可能。システムページからいつでも切り替えられます"))
+                }
                 Section("4.0.0") {
                     Text(tr("【画质超分与补帧】融合 MetalGoose 与 MetalDuck 优势，打造 macOS 专属无损画质与动态插帧引擎",
                             "Integrated super resolution and zero-latency frame generation engine combining MetalGoose & MetalDuck",

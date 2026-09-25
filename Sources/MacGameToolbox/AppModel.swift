@@ -63,6 +63,9 @@ final class AppModel: ObservableObject {
     @Published var iosLaunchConfirmationApp: IOSInstalledApp? = nil
     @Published var iosLaunchArgumentsText: String = ""
 
+    @Published var legacyHelperMigrationPending = false
+    @Published var showingCoexistenceRepairChoice = false
+
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
     private let diskService: DiskService
@@ -91,11 +94,12 @@ final class AppModel: ObservableObject {
     func launch() {
         guard !didLaunch else { return }
         didLaunch = true
-        DiagnosticFileLogger.write("App launched, version 4.2.0")
+        DiagnosticFileLogger.write("App launched, version 4.3.0")
         Task {
             do {
                 configuration = try await configurationStore.load()
                 AppLanguage.currentPreference = configuration.languagePreference
+                privileged.setLegacyCoexistence(configuration.legacyHelperCoexistence)
                 DispatchQueue.main.async {
                     let localizedTitle = tr("MetalPilot", "MetalPilot", "MetalPilot")
                     for window in NSApp.windows where window.canBecomeMain {
@@ -113,6 +117,7 @@ final class AppModel: ObservableObject {
             }
             startAutomaticMountMonitoring()
             checkSystemHealth()
+            evaluateLegacyHelperMigration()
             setupScalingHotkeys()
         }
     }
@@ -1077,7 +1082,7 @@ final class AppModel: ObservableObject {
     func repairCoreFeatures() {
         runTask(tr("正在修复核心服务…", "Repairing core features…")) {
             self.status.phase = .awaitingAuthorization
-            try await self.privileged.installOrReinstallHelper()
+            try await self.privileged.installOrReinstallHelper(preserveLegacy: self.configuration.legacyHelperCoexistence)
             try await self.privileged.perform(.healthCheck)
             self.checkSystemHealth()
             return tr("核心服务已成功修复", "Core features repaired successfully")
@@ -1127,11 +1132,54 @@ final class AppModel: ObservableObject {
     func cleanAllLegacyHelpersAndRepair() {
         runTask(tr("正在清理残留并注册服务…", "Cleaning legacy services & registering…")) {
             self.status.phase = .awaitingAuthorization
-            try await self.privileged.installOrReinstallHelper()
+            try await self.privileged.installOrReinstallHelper(preserveLegacy: self.configuration.legacyHelperCoexistence)
             try await self.privileged.perform(.healthCheck)
             self.checkSystemHealth()
             return tr("已清理历史残留并成功注册核心服务", "Cleaned legacy residuals and successfully registered core service")
         }
+    }
+
+    func evaluateLegacyHelperMigration() {
+        guard !configuration.legacyHelperCoexistence else {
+            legacyHelperMigrationPending = false
+            return
+        }
+        let legacyHelperExists = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/macgametoolbox.helper")
+        let legacyPlistExists = FileManager.default.fileExists(atPath: "/Library/LaunchDaemons/macgametoolbox.helper.plist")
+        let newHelperInstalled = FileManager.default.fileExists(atPath: PrivilegedHelperClient.installedHelperPath)
+        legacyHelperMigrationPending = (legacyHelperExists || legacyPlistExists) && !newHelperInstalled
+        if legacyHelperMigrationPending {
+            DiagnosticFileLogger.write("Legacy helper macgametoolbox.helper detected; migration prompt shown")
+        }
+    }
+
+    /// Entry point for the System page repair button: in side-by-side mode it
+    /// first asks whether to keep or remove the legacy service.
+    func requestServiceRepair() {
+        if configuration.legacyHelperCoexistence {
+            showingCoexistenceRepairChoice = true
+        } else {
+            cleanAllLegacyHelpersAndRepair()
+        }
+    }
+
+    /// Migrates to `metalpilot.helper` and removes the legacy service.
+    func migrateLegacyHelper() {
+        legacyHelperMigrationPending = false
+        configuration.legacyHelperCoexistence = false
+        privileged.setLegacyCoexistence(false)
+        saveConfiguration()
+        cleanAllLegacyHelpersAndRepair()
+    }
+
+    /// Keeps the legacy `macgametoolbox.helper` so the old app and MetalPilot
+    /// can run side by side; neither install path will delete it afterwards.
+    func keepLegacyHelperCoexistence() {
+        legacyHelperMigrationPending = false
+        configuration.legacyHelperCoexistence = true
+        privileged.setLegacyCoexistence(true)
+        saveConfiguration()
+        DiagnosticFileLogger.write("Legacy helper coexistence enabled; macgametoolbox.helper will be preserved")
     }
 
     func openBackgroundSettings() {
