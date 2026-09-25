@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/Architecture-Apple%20Silicon%20ARM64-brightgreen.svg" alt="Apple Silicon ARM64" />
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
   <img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0" />
-  <img src="https://img.shields.io/badge/Version-v4.3.0-orange.svg" alt="v4.3.0" />
+  <img src="https://img.shields.io/badge/Version-v4.3.1-orange.svg" alt="v4.3.1" />
 </p>
 
 MetalPilot brings game launching, performance enhancement, Metal HUD, save management, and system status together in one lightweight, native macOS app. It doesn't try to take over your games — it helps you prepare before you launch, stay informed while you play, and keep diagnosable information after you quit.

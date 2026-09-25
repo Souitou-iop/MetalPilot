@@ -15,7 +15,7 @@
 		A10000000000000000000006 /* CacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* CacheService.swift */; };
 		A10000000000000000000007 /* HostsFileEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000007 /* HostsFileEditor.swift */; };
 		A10000000000000000000008 /* PrivilegedXPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000008 /* PrivilegedXPC.swift */; };
-		A10000000000000000000009 /* MacGameToolboxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000001 /* MacGameToolboxApp.swift */; };
+		A10000000000000000000009 /* MetalPilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000001 /* MetalPilotApp.swift */; };
 		A1000000000000000000000A /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* AppModel.swift */; };
 		A1000000000000000000000B /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000003 /* DashboardView.swift */; };
 		A1000000000000000000000C /* DiskManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000004 /* DiskManagerView.swift */; };
@@ -111,7 +111,7 @@
 		F10000000000000000000006 /* CacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CacheService.swift; sourceTree = "<group>"; };
 		F10000000000000000000007 /* HostsFileEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostsFileEditor.swift; sourceTree = "<group>"; };
 		F10000000000000000000008 /* PrivilegedXPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivilegedXPC.swift; sourceTree = "<group>"; };
-		F20000000000000000000001 /* MacGameToolboxApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacGameToolboxApp.swift; sourceTree = "<group>"; };
+		F20000000000000000000001 /* MetalPilotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalPilotApp.swift; sourceTree = "<group>"; };
 		F20000000000000000000002 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F20000000000000000000003 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		F20000000000000000000004 /* DiskManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskManagerView.swift; sourceTree = "<group>"; };
@@ -188,9 +188,9 @@
 		G10000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				G10000000000000000000002 /* MacGameToolboxCore */,
+				G10000000000000000000002 /* MetalPilotCore */,
 				F60000000000000000000001 /* Metal Pilot.icon */,
-				G10000000000000000000003 /* MacGameToolbox */,
+				G10000000000000000000003 /* MetalPilot */,
 				G10000000000000000000004 /* MetalPilotPrivilegedHelper */,
 				G10000000000000000000005 /* Config */,
 				G10000000000000000000006 /* Products */,
@@ -198,7 +198,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		G10000000000000000000002 /* MacGameToolboxCore */ = {
+		G10000000000000000000002 /* MetalPilotCore */ = {
 			isa = PBXGroup;
 			children = (
 				F10000000000000000000001 /* Models.swift */,
@@ -216,14 +216,14 @@
 					F10000000000000000000014 /* WindowCaptureService.swift */,
 					F10000000000000000000015 /* ScalingEngine.swift */,
 			);
-			name = MacGameToolboxCore;
-			path = Sources/MacGameToolboxCore;
+			name = MetalPilotCore;
+			path = Sources/MetalPilotCore;
 			sourceTree = "<group>";
 		};
-		G10000000000000000000003 /* MacGameToolbox */ = {
+		G10000000000000000000003 /* MetalPilot */ = {
 			isa = PBXGroup;
 			children = (
-				F20000000000000000000001 /* MacGameToolboxApp.swift */,
+				F20000000000000000000001 /* MetalPilotApp.swift */,
 				F20000000000000000000002 /* AppModel.swift */,
 				F20000000000000000000003 /* DashboardView.swift */,
 				F20000000000000000000004 /* DiskManagerView.swift */,
@@ -252,8 +252,8 @@
 					F20000000000000000000027 /* MenuBarPopoverView.swift */,
 					F20000000000000000000028 /* IOSHUDLauncherSheetView.swift */,
 			);
-			name = MacGameToolbox;
-			path = Sources/MacGameToolbox;
+			name = MetalPilot;
+			path = Sources/MetalPilot;
 			sourceTree = "<group>";
 		};
 		G10000000000000000000004 /* MetalPilotPrivilegedHelper */ = {
@@ -385,7 +385,7 @@
 				A10000000000000000000006 /* CacheService.swift in Sources */,
 				A10000000000000000000007 /* HostsFileEditor.swift in Sources */,
 				A10000000000000000000008 /* PrivilegedXPC.swift in Sources */,
-				A10000000000000000000009 /* MacGameToolboxApp.swift in Sources */,
+				A10000000000000000000009 /* MetalPilotApp.swift in Sources */,
 				A1000000000000000000000A /* AppModel.swift in Sources */,
 				A1000000000000000000000B /* DashboardView.swift in Sources */,
 				A1000000000000000000000C /* DiskManagerView.swift in Sources */,
@@ -477,13 +477,13 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 4.3.0;
+					CURRENT_PROJECT_VERSION = 4.3.1;
 					DEVELOPMENT_TEAM = HP5WBFL9G3;
 					ENABLE_DEBUG_DYLIB = NO;
 					GENERATE_INFOPLIST_FILE = NO;
 					INFOPLIST_FILE = "Config/App-Info.plist";
 					MACOSX_DEPLOYMENT_TARGET = 26.0;
-					MARKETING_VERSION = 4.3.0;
+					MARKETING_VERSION = 4.3.1;
 					PRODUCT_BUNDLE_IDENTIFIER = com.iven.macgametoolbox;
 					PRODUCT_NAME = MetalPilot;
 					PROVISIONING_PROFILE_SPECIFIER = "";
@@ -500,12 +500,12 @@
 					"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 					CODE_SIGN_STYLE = Automatic;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 4.3.0;
+					CURRENT_PROJECT_VERSION = 4.3.1;
 					DEVELOPMENT_TEAM = HP5WBFL9G3;
 					GENERATE_INFOPLIST_FILE = NO;
 					INFOPLIST_FILE = "Config/App-Info.plist";
 					MACOSX_DEPLOYMENT_TARGET = 26.0;
-					MARKETING_VERSION = 4.3.0;
+					MARKETING_VERSION = 4.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iven.macgametoolbox;
 				PRODUCT_NAME = MetalPilot;
 				PROVISIONING_PROFILE_SPECIFIER = "";

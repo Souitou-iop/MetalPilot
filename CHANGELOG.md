@@ -4,6 +4,16 @@ All notable changes to **MetalPilot** will be documented in this file.
 
 ---
 
+## [v4.3.1] - 2026-09-25
+
+### 🧹 旧品牌内部命名全面清理 (Internal Legacy Naming Cleanup)
+- **命名层统一为 MetalPilot**：Swift Package 名、模块与源码目录（`MacGameToolboxCore` → `MetalPilotCore`、`Sources/MacGameToolbox` → `Sources/MetalPilot`）、测试 target（`MetalPilotCoreTests`）、`@main` 结构体（`MetalPilotApp`）与错误类型（`ToolboxError` → `MetalPilotError`）全部更名，纯机械替换无行为变化，`SWIFT_PACKAGE` 门控的全部模块导入同步更新。
+- **hosts 托管块标记迁移**：新写入的标记改为 `# BEGIN/END METALPILOT HOYO`，并永久兼容识别旧版本写入的 `MAC GAME TOOLBOX` 标记，确保旧块仍能被精准清理与回滚；同时修复启动检测中硬编码旧标记的重复字面量，改为复用常量并双标记识别。
+- **界面与零散清理**：修复中文界面遗留的「工具箱」自称；Helper hosts 临时文件、测试夹具路径、脚本内临时口令与窗口过滤注释同步更名；合并 Helper `main.swift` 中完全重复的 `--install` 参数处理块。
+- **兼容身份保持不变**：App Bundle ID（`com.iven.macgametoolbox`）、持久签名证书（`MacGameToolbox Dev`）、旧 helper（`macgametoolbox.helper`）识别与迁移逻辑原样保留，TCC 权限、后台项显示与升级路径不受影响。
+
+---
+
 ## [v4.3.0] - 2026-09-25
 
 ### 🛠️ 特权辅助服务迁移至新品牌标识 (Privileged Helper Identity Migration)

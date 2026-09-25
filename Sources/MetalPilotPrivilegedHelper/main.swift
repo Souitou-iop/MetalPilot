@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 #if SWIFT_PACKAGE
-import MacGameToolboxCore
+import MetalPilotCore
 #endif
 import Security
 import OSLog
@@ -302,7 +302,7 @@ func rewriteHosts(addBlock: Bool) throws {
     let url = URL(fileURLWithPath: "/etc/hosts")
     let original = try String(contentsOf: url, encoding: .utf8)
     let updated = HostsFileEditor.replacingManagedBlock(in: original, domains: hoyoDomains, enabled: addBlock)
-    let temporary = URL(fileURLWithPath: "/etc/.mac-game-toolbox-hosts-\(getpid())")
+    let temporary = URL(fileURLWithPath: "/etc/.metalpilot-hosts-\(getpid())")
     try updated.write(to: temporary, atomically: true, encoding: .utf8)
     try FileManager.default.setAttributes([.posixPermissions: 0o644, .ownerAccountID: 0, .groupOwnerAccountID: 0], ofItemAtPath: temporary.path)
     _ = try FileManager.default.replaceItemAt(url, withItemAt: temporary)
@@ -353,14 +353,4 @@ final class HelperDaemon: @unchecked Sendable {
     }
 }
 
-guard geteuid() == 0 else { fatalError(HelperError.notRoot.localizedDescription) }
-if CommandLine.arguments.count >= 3, CommandLine.arguments[1] == "--install" {
-    do {
-        try installPersistentHelper(for: CommandLine.arguments[2], preserveLegacy: CommandLine.arguments.contains("--preserve-legacy"))
-        exit(EXIT_SUCCESS)
-    } catch {
-        fputs("\(error.localizedDescription)\n", stderr)
-        exit(EXIT_FAILURE)
-    }
-}
 HelperDaemon.shared.start()

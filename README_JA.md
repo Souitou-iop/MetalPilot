@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/アーキテクチャ-Apple%20Silicon%20ARM64-brightgreen.svg" alt="Apple Silicon ARM64" />
   <img src="https://img.shields.io/badge/Swift-6-orange.svg" alt="Swift 6" />
   <img src="https://img.shields.io/badge/ライセンス-GPL--3.0-blue.svg" alt="GPL-3.0" />
-  <img src="https://img.shields.io/badge/バージョン-v4.3.0-orange.svg" alt="v4.3.0" />
+  <img src="https://img.shields.io/badge/バージョン-v4.3.1-orange.svg" alt="v4.3.1" />
 </p>
 
 MetalPilot は、ゲームの起動、パフォーマンス強化、Metal HUD、セーブデータ管理、システム状態をひとつの軽量な macOS ネイティブアプリにまとめました。ゲームを代わりに操作するのではなく、起動前の準備、プレイ中の状態把握、終了後の診断情報をサポートします。
