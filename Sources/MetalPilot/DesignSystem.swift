@@ -8,7 +8,7 @@ import MetalPilotCore
 
 public enum AppVersion {
     public static var current: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "4.3.2"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "4.3.3"
     }
 
     public static var displayString: String {

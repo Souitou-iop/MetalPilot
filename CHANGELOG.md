@@ -4,6 +4,15 @@ All notable changes to **MetalPilot** will be documented in this file.
 
 ---
 
+## [v4.3.3] - 2026-09-26
+
+### 📦 Release 稳定性迭代 (Release Stability Iteration)
+- **版本号迭代**：将当前已验证的超分/补帧自动恢复闭环、捕捉流重建、窗口回退与紧急回退能力打包为新的 `4.3.3` Release 版本。
+- **界面修复纳入 Release**：包含快捷场景预设文案放大与调度中心侧边栏图标闪烁修复。
+- **签名与兼容性保持**：继续使用 `MacGameToolbox Dev` 对 App 与特权 Helper 签名，保持原 Bundle ID 与用户配置路径不变。
+
+---
+
 ## [v4.3.2] - 2026-09-26
 
 ### 🐳 修复启动时 Dock 图标闪两次 (Fix Dock Icon Double-Flash on Launch)

@@ -6,6 +6,14 @@ struct ChangelogView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("4.3.3") {
+                    Text(tr("【Release 稳定性迭代】将超分与补帧自动恢复、捕捉流重建、目标窗口回退与紧急回退能力打包为当前稳定版本",
+                            "Release stability iteration: automatic scaling recovery, capture-stream rebuilds, target-window fallback and emergency rollback are included in this stable build",
+                            "【Release 安定性更新】超解像・補フレームの自動復旧、キャプチャストリーム再構築、対象ウィンドウのフォールバック、緊急復帰を安定版に収録しました"))
+                    Text(tr("【界面排版与导航】放大快捷场景预设文案，并修复切换调度中心时侧边栏图标闪烁",
+                            "UI polish: enlarged quick-profile text and fixed sidebar icon flicker while switching dashboard sections",
+                            "【UI調整】クイックプロファイルの文字を拡大し、ダッシュボード切り替え時のサイドバーアイコン点滅を修正しました"))
+                }
                 Section("4.3.2") {
                     Text(tr("【更名收尾】包、模块、源码目录与内部类型统一为 MetalPilot 标识；hosts 托管块标记更新为 METALPILOT，并继续兼容识别旧版本写入的标记",
                             "Rebrand cleanup: package, module, source directories and internal types unified under the MetalPilot identity; the managed hosts block marker is now METALPILOT, still recognizing blocks written by older versions",
