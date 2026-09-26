@@ -26,6 +26,11 @@ public final class ScalingEngine: NSObject, MTKViewDelegate, @unchecked Sendable
 
     nonisolated(unsafe) public static var lastInitError: String?
 
+    /// Called after a captured frame has been converted into a renderable texture.
+    /// The overlay should not be shown before this point, otherwise an empty MTKView
+    /// can briefly cover the target window with its clear color.
+    public var onFrameReady: (() -> Void)?
+
     public func reportError(_ message: String) {
         errorLock.lock()
         defer { errorLock.unlock() }
@@ -306,6 +311,7 @@ public final class ScalingEngine: NSObject, MTKViewDelegate, @unchecked Sendable
             self._stats.frameCount += 1
             self._stats.captureFPS = 60.0
             self.statsLock.unlock()
+            self.onFrameReady?()
         }
     }
 

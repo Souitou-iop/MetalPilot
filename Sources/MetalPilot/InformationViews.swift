@@ -6,7 +6,7 @@ struct ChangelogView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("4.3.1") {
+                Section("4.3.2") {
                     Text(tr("【更名收尾】包、模块、源码目录与内部类型统一为 MetalPilot 标识；hosts 托管块标记更新为 METALPILOT，并继续兼容识别旧版本写入的标记",
                             "Rebrand cleanup: package, module, source directories and internal types unified under the MetalPilot identity; the managed hosts block marker is now METALPILOT, still recognizing blocks written by older versions",
                             "【名称統一の仕上げ】パッケージ・モジュール・ソースディレクトリ・内部型名を MetalPilot 表記に統一。hosts 管理ブロックのマーカーを METALPILOT に更新し、旧マーカーも引き続き認識します"))

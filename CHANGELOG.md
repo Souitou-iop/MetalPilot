@@ -4,6 +4,16 @@ All notable changes to **MetalPilot** will be documented in this file.
 
 ---
 
+## [v4.3.2] - 2026-09-26
+
+### 🐳 修复启动时 Dock 图标闪两次 (Fix Dock Icon Double-Flash on Launch)
+- **激活策略启动翻转修复**：`MenuCommandCoordinator` 新增 `hasShownMainWindow` 门控，在主窗口首次显示之前不再执行 `.accessory` 切换。此前启动瞬间 `install()` 中的 `updateDockVisibility()` 在 SwiftUI 主窗口尚未创建时执行，误判"无可见主窗口"而隐藏 Dock 图标，窗口成为 key window 后又切回 `.regular`，表现为 Dock 图标弹出→消失→再弹出共闪两次。
+- **权限提示根治部署**：本次部署的 App 未经过 `Scripts/build-release.sh` 签名流程（ad-hoc/linker 签名），每次重建 cdhash 变化导致 macOS TCC 将其视为陌生程序、屏幕录制/辅助功能授权反复失效。现恢复以持久证书 `MacGameToolbox Dev` 签名 App 与特权 Helper，TCC 以证书身份（`com.iven.macgametoolbox` + 证书指纹）匹配，本地重建不再重置授权。
+- **超分与补帧自动恢复闭环**：检测 ScreenCaptureKit 捕捉流错误、启动超时、运行中长时间无完整帧、窗口/显示器变化及睡眠唤醒，自动销毁并重建捕捉流，重新匹配目标窗口；连续失败后移除覆盖层并回退到原始画面，同时提供紧急回退快捷键 `⌘⌥⇧Esc`。
+- **界面稳定性修复**：放大快捷场景预设文案并保持两列排版；固定导航侧边栏图标样式并禁用切换详情页时的隐式动画，避免图标闪烁。
+
+---
+
 ## [v4.3.1] - 2026-09-25
 
 ### 🧹 旧品牌内部命名全面清理 (Internal Legacy Naming Cleanup)

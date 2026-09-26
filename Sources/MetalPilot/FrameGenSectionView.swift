@@ -179,13 +179,19 @@ public struct FrameGenSectionView: View {
     private var presetsBox: some View {
         GroupBox(label: Label(tr("快捷场景预设", "Quick Profiles", "プリセット設定"), systemImage: "slider.horizontal.3").font(.headline)) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 12) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ], spacing: 10) {
                     ForEach(ScalingPreset.allCases) { preset in
                         Button {
                             applyPreset(preset)
                         } label: {
                             Text(tr(preset.titleZh, preset.titleEn, preset.titleJa))
-                                .font(.caption.bold())
+                                .font(.body.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .frame(maxWidth: .infinity, minHeight: 34)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 10)
                         }
@@ -288,7 +294,7 @@ public struct FrameGenSectionView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .frame(maxWidth: 400)
+                    .frame(maxWidth: .infinity)
                 }
 
                 Divider()
@@ -339,27 +345,41 @@ public struct FrameGenSectionView: View {
     private var cursorAndShortcutBox: some View {
         GroupBox(label: Label(tr("控制与快捷键说明", "Controls & Global Shortcuts", "操作とグローバルショートカット"), systemImage: "keyboard.fill").font(.headline)) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 20) {
-                    HStack(spacing: 6) {
-                        Text("⌘ + ⇧ + T")
-                            .font(.system(.caption, design: .monospaced).bold())
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.15))
-                            .cornerRadius(4)
-                        Text(tr("全局一键开启 / 暂停超分补帧", "Toggle Scaling & Frame Gen", "補フレームの開始/停止"))
-                            .font(.caption)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 20) {
+                        HStack(spacing: 6) {
+                            Text("⌘ + ⇧ + T")
+                                .font(.system(.caption, design: .monospaced).bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.secondary.opacity(0.15))
+                                .cornerRadius(4)
+                            Text(tr("全局一键开启 / 暂停超分补帧", "Toggle Scaling & Frame Gen", "補フレームの開始/停止"))
+                                .font(.caption)
+                        }
+
+                        HStack(spacing: 6) {
+                            Text("⌘ + ⇧ + C")
+                                .font(.system(.caption, design: .monospaced).bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.secondary.opacity(0.15))
+                                .cornerRadius(4)
+                            Text(tr("锁定 / 解锁鼠标光标约束", "Lock / Unlock Mouse Cursor", "マウスカーソル拘束の切替"))
+                                .font(.caption)
+                        }
                     }
 
                     HStack(spacing: 6) {
-                        Text("⌘ + ⇧ + C")
+                        Text("⌘ + ⌥ + ⇧ + Esc")
                             .font(.system(.caption, design: .monospaced).bold())
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.15))
+                            .background(Color.orange.opacity(0.15))
                             .cornerRadius(4)
-                        Text(tr("锁定 / 解锁鼠标光标约束", "Lock / Unlock Mouse Cursor", "マウスカーソル拘束の切替"))
+                        Text(tr("紧急回退：立即移除覆盖层", "Emergency rollback: remove overlay immediately", "緊急復帰：オーバーレイを即時解除"))
                             .font(.caption)
+                            .foregroundStyle(.orange)
                     }
                 }
             }

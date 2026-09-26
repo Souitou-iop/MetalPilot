@@ -7,6 +7,18 @@ import CoreVideo
 @preconcurrency import IOSurface
 import os
 
+public struct CaptureHealth: Sendable {
+    public let lastCompleteFrameAt: Date?
+    public let lastChangedFrameAt: Date?
+    public let frameSize: CGSize
+
+    public init(lastCompleteFrameAt: Date?, lastChangedFrameAt: Date?, frameSize: CGSize) {
+        self.lastCompleteFrameAt = lastCompleteFrameAt
+        self.lastChangedFrameAt = lastChangedFrameAt
+        self.frameSize = frameSize
+    }
+}
+
 public struct TargetWindowInfo: Identifiable, Sendable {
     public let id: CGWindowID
     public let title: String
@@ -32,6 +44,7 @@ public final class WindowCaptureService: NSObject, SCStreamDelegate, SCStreamOut
     private var stream: SCStream?
 
     private let configLock = OSAllocatedUnfairLock()
+    private let healthLock = OSAllocatedUnfairLock()
     private var _basePixelSize: CGSize = .zero
     private var _currentRenderScale: Float = 1.0
     private var _capturePixelSize: CGSize = .zero
@@ -53,12 +66,30 @@ public final class WindowCaptureService: NSObject, SCStreamDelegate, SCStreamOut
 
     private var lastFrameSignature: UInt64 = 0
     private var hasLastSignature = false
+    private var lastCompleteFrameAt: Date?
+    private var lastChangedFrameAt: Date?
+    private var lastFrameSize: CGSize = .zero
     private let sceneCutDetector = SceneCutDetector()
 
+    public var health: CaptureHealth {
+        healthLock.withLock {
+            CaptureHealth(
+                lastCompleteFrameAt: lastCompleteFrameAt,
+                lastChangedFrameAt: lastChangedFrameAt,
+                frameSize: lastFrameSize
+            )
+        }
+    }
+
     public var onFrameReceived: ((_ surface: IOSurfaceRef, _ pixelBuffer: CVPixelBuffer, _ timestamp: Double, _ isSceneCut: Bool) -> Void)?
+    public var onCaptureFailure: ((String) -> Void)?
 
     public override init() {
         super.init()
+    }
+
+    public static func getAvailableWindow(id: CGWindowID) async throws -> TargetWindowInfo? {
+        try await getAvailableWindows().first(where: { $0.id == id })
     }
 
     public static func getAvailableWindows() async throws -> [TargetWindowInfo] {
@@ -172,18 +203,24 @@ public final class WindowCaptureService: NSObject, SCStreamDelegate, SCStreamOut
             let config = makeConfiguration(renderScale: renderScale)
             let captureStream = SCStream(filter: filter, configuration: config, delegate: self)
             try captureStream.addStreamOutput(self, type: .screen, sampleHandlerQueue: captureQueue)
+            hasLastSignature = false
+            sceneCutDetector.reset()
+            healthLock.withLock {
+                lastCompleteFrameAt = nil
+                lastChangedFrameAt = nil
+                lastFrameSize = .zero
+            }
             try await captureStream.startCapture()
 
             self.stream = captureStream
-            hasLastSignature = false
-            sceneCutDetector.reset()
             await MainActor.run {
                 lastError = nil
             }
             return true
         } catch {
+            let message = "ScreenCaptureKit error: \(error.localizedDescription)"
             await MainActor.run {
-                lastError = "ScreenCaptureKit error: \(error.localizedDescription)"
+                lastError = message
             }
             return false
         }
@@ -206,11 +243,16 @@ public final class WindowCaptureService: NSObject, SCStreamDelegate, SCStreamOut
     }
 
     public nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
+        let stoppedStreamID = ObjectIdentifier(stream)
         Task { @MainActor in
             let nsError = error as NSError
             if nsError.domain == SCStreamErrorDomain && nsError.code == -3808 { return }
-            self.lastError = "Stream stopped: \(error.localizedDescription)"
+            guard let currentStream = self.stream,
+                  ObjectIdentifier(currentStream) == stoppedStreamID else { return }
+            let message = "Stream stopped: \(error.localizedDescription)"
+            self.lastError = message
             self.stream = nil
+            self.onCaptureFailure?(message)
         }
     }
 
@@ -231,12 +273,21 @@ public final class WindowCaptureService: NSObject, SCStreamDelegate, SCStreamOut
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         guard let surface = CVPixelBufferGetIOSurface(pixelBuffer)?.takeUnretainedValue() else { return }
 
+        let frameSize = CGSize(width: IOSurfaceGetWidth(surface), height: IOSurfaceGetHeight(surface))
+        healthLock.withLock {
+            lastCompleteFrameAt = Date()
+            lastFrameSize = frameSize
+        }
+
         let signature = Self.calculateFrameSignature(surface)
         if hasLastSignature && signature == lastFrameSignature {
             return
         }
         lastFrameSignature = signature
         hasLastSignature = true
+        healthLock.withLock {
+            lastChangedFrameAt = Date()
+        }
 
         let isSceneCut = sceneCutDetector.evaluate(surface: surface)
         let timestamp = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer))

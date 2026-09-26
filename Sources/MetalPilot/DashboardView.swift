@@ -182,6 +182,13 @@ struct DashboardView: View {
             }
         }
         .listStyle(.sidebar)
+        // Keep the SF Symbol column stable while the detail view is replaced.
+        // The automatic macOS label style can briefly hide/reveal sidebar icons
+        // during a NavigationSplitView selection update.
+        .labelStyle(.titleAndIcon)
+        .transaction { transaction in
+            transaction.animation = nil
+        }
         .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 280)
         .safeAreaInset(edge: .bottom) {
             sidebarFooter

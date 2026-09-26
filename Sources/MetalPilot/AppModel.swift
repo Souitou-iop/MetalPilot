@@ -94,7 +94,7 @@ final class AppModel: ObservableObject {
     func launch() {
         guard !didLaunch else { return }
         didLaunch = true
-        DiagnosticFileLogger.write("App launched, version 4.3.1")
+        DiagnosticFileLogger.write("App launched, version 4.3.2")
         Task {
             do {
                 configuration = try await configurationStore.load()
@@ -124,10 +124,33 @@ final class AppModel: ObservableObject {
     }
 
     private func setupScalingHotkeys() {
+        ScalingOverlayController.shared.onRecoveryStatus = { [weak self] status in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                switch status {
+                case .started(let message):
+                    self.setTransientStatus(.running, message: message, autoClearAfter: 4)
+                case .succeeded(let message):
+                    self.isScalingActive = true
+                    self.setTransientStatus(.succeeded, message: message, autoClearAfter: 4)
+                case .failed(let message):
+                    self.isScalingActive = false
+                    self.setTransientStatus(.failed, message: message, autoClearAfter: 8)
+                }
+            }
+        }
+
         // Cmd + Shift + T (keyCode 17 for 'T', modifiers cmdKey | shiftKey = 0x0100 | 0x0200)
         ScalingHotkeyManager.shared.register(keyCode: 17, modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
             Task { @MainActor [weak self] in
                 self?.toggleScaling()
+            }
+        }
+        // Cmd + Option + Shift + Escape: emergency stop. This is separate from
+        // the normal toggle so it remains an explicit recovery action.
+        ScalingHotkeyManager.shared.register(keyCode: 53, modifiers: UInt32(cmdKey | optionKey | shiftKey)) { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.emergencyStopScaling()
             }
         }
         // Cmd + Shift + C (keyCode 8 for 'C')
@@ -233,6 +256,17 @@ final class AppModel: ObservableObject {
             MouseConstraintManager.shared.disable()
             isScalingActive = false
             setTransientStatus(.succeeded, message: tr("已关闭画质超分与补帧", "Scaling & Frame Gen stopped"))
+        }
+    }
+
+    func emergencyStopScaling() {
+        // The controller hides the overlay before waiting for ScreenCaptureKit.
+        // Keep this path independent from the normal UI toggle.
+        MouseConstraintManager.shared.disable()
+        isScalingActive = false
+        Task {
+            await ScalingOverlayController.shared.stop()
+            setTransientStatus(.succeeded, message: tr("已执行紧急回退，已移除画质覆盖层", "Emergency rollback complete; scaling overlay removed"))
         }
     }
 

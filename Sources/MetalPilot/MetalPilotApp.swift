@@ -111,6 +111,7 @@ final class MenuCommandCoordinator: NSObject {
     private var menuObserverInstalled = false
     private var windowObserverInstalled = false
     private var isReorderingMenus = false
+    private var hasShownMainWindow = false
 
     func install(model: AppModel) {
         self.model = model
@@ -176,10 +177,15 @@ final class MenuCommandCoordinator: NSObject {
             !(window is NSPanel) && window.canBecomeMain && window.isVisible
         }
         if hasVisibleMainWindow {
+            hasShownMainWindow = true
             if NSApp.activationPolicy() != .regular {
                 NSApp.setActivationPolicy(.regular)
             }
         } else {
+            // At launch the SwiftUI window does not exist yet; flipping to
+            // .accessory here hides the Dock icon until windowDidBecomeKey
+            // restores it, which reads as the Dock icon flashing twice.
+            guard hasShownMainWindow else { return }
             if NSApp.activationPolicy() != .accessory {
                 NSApp.setActivationPolicy(.accessory)
             }
